@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ҰБТ дайындығы - Толық қосымша</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://telegram.org/js/telegram-web-app.js" onerror="console.log('Telegram Web App SDK not loaded')"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Загрузочный экран -->
+        <div id="loading-screen" class="screen active">
+            <div class="loading-content">
+                <div class="loading-logo">🎓</div>
+                <h1>ҰБТ дайындығы</h1>
+                <div class="loading-spinner"></div>
+                <p>Қосымша жүктелуде...</p>
+            </div>
+        </div>
+
+        <!-- Главное меню -->
+        <div id="main-screen" class="screen">
+            <!-- Навигационная панель -->
+            <nav class="navbar">
+                <div class="nav-brand">
+                    <span class="nav-logo">🎓</span>
+                    <span class="nav-title">ҰБТ дайындығы</span>
+                </div>
+                <div class="nav-user" id="nav-user">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-info">
+                        <div class="user-name" id="user-name">Қолданушы</div>
+                        <div class="user-level" id="user-level">1 деңгей</div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Основной контент -->
+            <main class="main-content">
+                <!-- Статистика пользователя -->
+                <section class="user-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="user-points">0</div>
+                            <div class="stat-label">Ұпай</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="user-rank">-</div>
+                            <div class="stat-label">Рейтинг</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="tests-completed">0</div>
+                            <div class="stat-label">Тест</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🔥</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="streak-days">0</div>
+                            <div class="stat-label">Күн қатарынан</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Основные функции -->
+                <section class="main-features">
+                    <div class="feature-grid">
+                        <!-- Тестирование -->
+                        <div class="feature-card" data-feature="tests">
+                            <div class="feature-icon">📝</div>
+                            <h3>Тестілеу</h3>
+                            <p>Физика және математика бойынша тестілер</p>
+                            <div class="feature-badge">500+ сұрақ</div>
+                        </div>
+
+                        <!-- Расписание -->
+                        <div class="feature-card" data-feature="schedule">
+                            <div class="feature-icon">📅</div>
+                            <h3>Кесте</h3>
+                            <p>Сабақтар кестесі және оқу жоспары</p>
+                            <div class="feature-badge">Жеке кесте</div>
+                        </div>
+
+                        <!-- Материалы -->
+                        <div class="feature-card" data-feature="materials">
+                            <div class="feature-icon">📚</div>
+                            <h3>Материалдар</h3>
+                            <p>Видео сабақтар және оқу материалдары</p>
+                            <div class="feature-badge">HD видео</div>
+                        </div>
+
+                        <!-- Рейтинг -->
+                        <div class="feature-card" data-feature="leaderboard">
+                            <div class="feature-icon">🏆</div>
+                            <h3>Рейтинг</h3>
+                            <p>Ең үздік студенттердің тізімі</p>
+                            <div class="feature-badge">Топ-100</div>
+                        </div>
+
+                        <!-- Квесты -->
+                        <div class="feature-card" data-feature="quests">
+                            <div class="feature-icon">🎯</div>
+                            <h3>Тапсырмалар</h3>
+                            <p>Күнделікті және апталық тапсырмалар</p>
+                            <div class="feature-badge">Сыйлықтар</div>
+                        </div>
+
+                        <!-- Профиль -->
+                        <div class="feature-card" data-feature="profile">
+                            <div class="feature-icon">👤</div>
+                            <h3>Профиль</h3>
+                            <p>Жеке ақпарат және жетістіктер</p>
+                            <div class="feature-badge">Статистика</div>
+                        </div>
+
+                        <!-- Админка (показывается только для админов) -->
+                        <div class="feature-card admin-only" data-feature="admin" style="display: none;">
+                            <div class="feature-icon">🔧</div>
+                            <h3>Админ панель</h3>
+                            <p>Басқару және мазмұн редакциялау</p>
+                            <div class="feature-badge">Админ</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Последние достижения -->
+                <section class="recent-achievements">
+                    <h2>Соңғы жетістіктер</h2>
+                    <div class="achievements-list" id="achievements-list">
+                        <!-- Будет заполнено JavaScript -->
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Экран тестирования -->
+        <div id="tests-screen" class="screen">
+            <div class="screen-header">
+                <button class="back-btn" data-back="main">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Тестілеу</h1>
+                <div class="header-actions">
+                    <button class="stats-btn" id="test-stats-btn">
+                        <i class="fas fa-chart-bar"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="screen-content">
+                <!-- Выбор предмета -->
+                <div class="subject-selection" id="subject-selection">
+                    <h2>Пәнді таңдаңыз</h2>
+                    <div class="subjects-grid">
+                        <div class="subject-card" data-subject="physics">
+                            <div class="subject-icon">🔬</div>
+                            <h3>Физика</h3>
+                            <p>Механика, термодинамика, электр</p>
+                            <div class="subject-stats">
+                                <span>250 сұрақ</span>
+                                <span class="difficulty medium">Орташа</span>
+                            </div>
+                        </div>
+                        <div class="subject-card" data-subject="mathematics">
+                            <div class="subject-icon">📐</div>
+                            <h3>Математика</h3>
+                            <p>Алгебра, геометрия, тригонометрия</p>
+                            <div class="subject-stats">
+                                <span>250 сұрақ</span>
+                                <span class="difficulty hard">Қиын</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Игровой режим -->
+                <div class="test-game" id="test-game" style="display: none;">
+                    <!-- Будет заполнено JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Экран расписания -->
+        <div id="schedule-screen" class="screen">
+            <div class="screen-header">
+                <button class="back-btn" data-back="main">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Сабақтар кестесі</h1>
+                <div class="header-actions">
+                    <button class="add-btn" id="add-schedule-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="screen-content">
+                <div class="schedule-calendar" id="schedule-calendar">
+                    <!-- Будет заполнено JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Экран материалов -->
+        <div id="materials-screen" class="screen">
+            <div class="screen-header">
+                <button class="back-btn" data-back="main">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Оқу материалдары</h1>
+                <div class="header-actions">
+                    <button class="search-btn" id="search-materials-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="screen-content">
+                <div class="materials-content" id="materials-content">
+                    <!-- Будет заполнено JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Экран рейтинга -->
+        <div id="leaderboard-screen" class="screen">
+            <div class="screen-header">
+                <button class="back-btn" data-back="main">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Рейтинг</h1>
+                <div class="header-actions">
+                    <button class="filter-btn" id="filter-leaderboard-btn">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="screen-content">
+                <div class="leaderboard-content" id="leaderboard-content">
+                    <!-- Будет заполнено JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Экран квестов -->
+        <div id="quests-screen" class="screen">
+            <div class="screen-header">
+                <button class="back-btn" data-back="main">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Тапсырмалар</h1>
+                <div class="header-actions">
+                    <span class="quest-points" id="available-quest-points">0 ұпай қол жетімді</span>
+                </div>
+            </div>
+
+            <div class="screen-content">
+                <div class="quests-content" id="quests-content">
+                    <!-- Будет заполнено JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Экран профиля -->
+        <div id="profile-screen" class="screen">
+            <div class="screen-header">
+                <button class="back-btn" data-back="main">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Менің профилім</h1>
+                <div class="header-actions">
+                    <button class="btn btn-edit" id="edit-profile-btn">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="screen-content">
+                <div class="profile-container">
+                    <div class="profile-header">
+                        <div class="profile-avatar-container">
+                            <img alt="Аватар" class="profile-avatar" id="profile-avatar" src="" />
+                            <label for="avatar-upload" class="avatar-upload-label" id="avatar-upload-label" title="Аватарды өзгерту">
+                                <i class="fas fa-camera"></i>
+                            </label>
+                            <input type="file" id="avatar-upload" accept="image/*" style="display: none;" />
+                        </div>
+                        <div class="profile-info">
+                            <h2 id="profile-name">Пайдаланушы</h2>
+                            <p class="profile-email" id="profile-email">—</p>
+                            <p class="profile-role" id="profile-role">Рөлі: Оқушы</p>
+                            <div class="profile-level">
+                                <div class="level-progress"><div class="level-progress-bar" id="level-progress-bar"></div></div>
+                                <span class="level-text" id="level-text">1 деңгей</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="stats-tests">0</div>
+                            <div class="stat-label">Тесттер</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stats-accuracy">0%</div>
+                            <div class="stat-label">Дұрыс жауап</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="stats-rank">#-</div>
+                            <div class="stat-label">Рейтинг</div>
+                        </div>
+                    </div>
+
+                    <div class="profile-section">
+                        <div class="section-header">
+                            <h3>Жетістіктер</h3>
+                            <a href="#" class="view-all" id="view-all-achievements">Барлығын көру</a>
+                        </div>
+                        <div class="achievements-grid" id="achievements-preview">
+                            <div class="achievement-placeholder">
+                                <i class="fas fa-trophy"></i>
+                                <p>Сізде әзірше жетістік жоқ</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-section">
+                        <div class="section-header">
+                            <h3>Соңғы белсенділік</h3>
+                        </div>
+                        <div class="activity-feed" id="activity-feed">
+                            <div class="empty-state">
+                                <i class="fas fa-history"></i>
+                                <p>Әзірше белсенділік жоқ</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="edit-profile-form" id="edit-profile-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="edit-name">Аты-жөні</label>
+                        <input type="text" id="edit-name" class="form-control" placeholder="Аты-жөніңіз" />
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-email">Электрондық пошта</label>
+                        <input type="email" id="edit-email" class="form-control" placeholder="email@мысал.kz" />
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-phone">Телефон нөмірі</label>
+                        <input type="tel" id="edit-phone" class="form-control" placeholder="+7 (___) ___-____" />
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-school">Мектеп/Университет</label>
+                        <input type="text" id="edit-school" class="form-control" placeholder="Оқу орны" />
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-edit-profile">Болдырмау</button>
+                        <button type="button" class="btn btn-primary" id="save-profile">Сақтау</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Админская панель -->
+        <div id="admin-screen" class="screen">
+            <div class="screen-header">
+                <button class="back-btn" data-back="main">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>🔧 Админ панель</h1>
+                <div class="header-actions">
+                    <button class="refresh-btn" id="admin-refresh-btn">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="screen-content">
+                <!-- Админские функции -->
+                <div class="admin-functions">
+                    <div class="admin-tabs">
+                        <button class="admin-tab active" data-tab="schedule">📅 Расписание</button>
+                        <button class="admin-tab" data-tab="materials">📚 Материалы</button>
+                        <button class="admin-tab" data-tab="tests">📝 Тесты</button>
+                        <button class="admin-tab" data-tab="quests">🎯 Квесты</button>
+                        <button class="admin-tab" data-tab="users">👥 Пользователи</button>
+                        <button class="admin-tab" data-tab="stats">📊 Статистика</button>
+                    </div>
+
+                    <!-- Управление расписанием -->
+                    <div class="admin-content active" id="admin-schedule">
+                        <div class="admin-section-header">
+                            <h2>Управление расписанием</h2>
+                            <button class="btn btn-primary" id="add-schedule-admin-btn">
+                                <i class="fas fa-plus"></i> Добавить занятие
+                            </button>
+                        </div>
+                        <div class="admin-schedule-list" id="admin-schedule-list">
+                            <!-- Будет заполнено JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Управление материалами -->
+                    <div class="admin-content" id="admin-materials">
+                        <div class="admin-section-header">
+                            <h2>Управление материалами</h2>
+                            <button class="btn btn-primary" id="add-material-admin-btn">
+                                <i class="fas fa-plus"></i> Добавить материал
+                            </button>
+                        </div>
+                        <div class="admin-materials-list" id="admin-materials-list">
+                            <!-- Будет заполнено JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Управление тестами -->
+                    <div class="admin-content" id="admin-tests">
+                        <div class="admin-section-header">
+                            <h2>Управление тестами</h2>
+                            <button class="btn btn-primary" id="add-test-admin-btn">
+                                <i class="fas fa-plus"></i> Добавить вопрос
+                            </button>
+                        </div>
+                        <div class="admin-tests-list" id="admin-tests-list">
+                            <!-- Будет заполнено JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Управление квестами -->
+                    <div class="admin-content" id="admin-quests">
+                        <div class="admin-section-header">
+                            <h2>Управление квестами</h2>
+                            <button class="btn btn-primary" id="add-quest-admin-btn">
+                                <i class="fas fa-plus"></i> Добавить квест
+                            </button>
+                        </div>
+                        <div class="admin-quests-list" id="admin-quests-list">
+                            <!-- Будет заполнено JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Управление пользователями -->
+                    <div class="admin-content" id="admin-users">
+                        <div class="admin-section-header">
+                            <h2>Пользователи</h2>
+                            <div class="admin-stats-summary">
+                                <span id="total-users-count">0 пользователей</span>
+                                <span id="active-users-count">0 активных</span>
+                            </div>
+                        </div>
+                        <div class="admin-users-list" id="admin-users-list">
+                            <!-- Будет заполнено JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Статистика -->
+                    <div class="admin-content" id="admin-stats">
+                        <div class="admin-section-header">
+                            <h2>Статистика системы</h2>
+                        </div>
+                        <div class="admin-stats-grid" id="admin-stats-grid">
+                            <!-- Будет заполнено JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Модальное окно</h3>
+                <button class="modal-close" id="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Содержимое модального окна -->
+            </div>
+            <div class="modal-footer" id="modal-footer">
+                <!-- Кнопки модального окна -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div id="notifications-container" class="notifications-container">
+        <!-- Уведомления будут добавляться JavaScript -->
+    </div>
+
+    <!-- Нижняя навигация для мобильных -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <button class="nav-item active" data-screen="main">
+            <i class="fas fa-home"></i>
+            <span>Басты</span>
+        </button>
+        <button class="nav-item" data-screen="tests">
+            <i class="fas fa-clipboard-check"></i>
+            <span>Тест</span>
+        </button>
+        <button class="nav-item" data-screen="schedule">
+            <i class="fas fa-calendar"></i>
+            <span>Кесте</span>
+        </button>
+        <button class="nav-item" data-screen="materials">
+            <i class="fas fa-book"></i>
+            <span>Материал</span>
+        </button>
+        <button class="nav-item" data-screen="profile">
+            <i class="fas fa-user"></i>
+            <span>Профиль</span>
+        </button>
+    </nav>
+
+    <!-- JavaScript файлы -->
+    <script src="js/data.js"></script>
+    <script src="js/telegram.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/screens.js"></script>
+    <script src="js/app.js"></script>
+    
+    <!-- Fallback script для быстрого запуска -->
+    <script>
+        // Если через 3 секунды приложение не запустилось, принудительно показываем главный экран
+        setTimeout(() => {
+            if (!window.app || document.getElementById('loading-screen').classList.contains('active')) {
+                console.log('Принудительный запуск приложения');
+                document.getElementById('loading-screen').classList.remove('active');
+                document.getElementById('main-screen').classList.add('active');
+                
+                // Инициализируем базовые данные если их нет
+                if (!window.storage) {
+                    window.storage = {
+                        getUserProfile: () => ({
+                            name: 'Қолданушы',
+                            level: 1,
+                            points: 0,
+                            testsCompleted: 0,
+                            streak: 0
+                        })
+                    };
+                }
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
