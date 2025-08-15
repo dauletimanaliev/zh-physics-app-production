@@ -343,7 +343,7 @@ async def get_teacher_stats():
                 "total_tests_taken": sum(u.get('tests_completed', 0) for u in users),
                 "published_tests": active_tests,
                 "published_materials": total_materials,
-                "top_performers": await db.get_leaderboard(3)
+                "top_performers": []  # Simplified for now
             }
         }
     except Exception as e:
