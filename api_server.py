@@ -822,10 +822,12 @@ async def get_teacher_materials(teacher_id: int):
 async def create_material(material_data: Dict[str, Any]):
     """Create a new material with optional file attachments"""
     try:
-        print(f"📝 Creating new material: {material_data.get('title', 'Untitled')}")
+        print(f"📝 Creating new material with data: {material_data}")
+        print(f"📋 Material title: '{material_data.get('title', 'Untitled')}'")
         
         # Extract attachments if present
         attachments = material_data.pop('attachments', [])
+        print(f"📎 Found {len(attachments)} attachments")
         
         # Convert material to dict for database insertion
         material_dict = {
@@ -846,6 +848,8 @@ async def create_material(material_data: Dict[str, Any]):
             'updated_at': datetime.now().isoformat()
         }
         
+        print(f"🔧 Prepared material dict: {material_dict}")
+        
         # Process attachments and store as JSON
         if attachments:
             processed_attachments = []
@@ -861,11 +865,21 @@ async def create_material(material_data: Dict[str, Any]):
             
             material_dict['attachments'] = json.dumps(processed_attachments)
             print(f"📎 Processing {len(processed_attachments)} attachments")
+        else:
+            material_dict['attachments'] = json.dumps([])
+            print("📎 No attachments to process")
+        
+        print("💾 Adding material to database...")
         
         # Add material to database
-        material_id = await db.add_material(material_dict)
+        try:
+            material_id = await db.add_material(material_dict)
+            print(f"✅ Material created successfully with ID: {material_id}")
+        except Exception as db_error:
+            print(f"❌ Database error: {db_error}")
+            print(f"📜 Database traceback: {traceback.format_exc()}")
+            raise db_error
         
-        print(f"✅ Material created successfully with ID: {material_id}")
         return {
             "message": "Material created successfully",
             "material_id": material_id,
