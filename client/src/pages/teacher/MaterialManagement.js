@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import apiClient from '../../services/apiClient';
+import FileUploader from '../../components/FileUploader';
+import MaterialViewer from '../../components/MaterialViewer';
 
 const MaterialManagement = () => {
   const { user } = useAuth();
@@ -14,6 +16,8 @@ const MaterialManagement = () => {
   const [materialToDelete, setMaterialToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [viewingMaterial, setViewingMaterial] = useState(null);
+  const [showMaterialViewer, setShowMaterialViewer] = useState(false);
 
   // Form state for creating/editing materials
   const [materialForm, setMaterialForm] = useState({
@@ -30,6 +34,7 @@ const MaterialManagement = () => {
     pdfUrl: '',
     thumbnailUrl: ''
   });
+  const [attachedFiles, setAttachedFiles] = useState([]);
 
   const categories = [
     { id: 'all', name: 'Все разделы', icon: '📚', color: '#6b7280' },
@@ -148,6 +153,24 @@ const MaterialManagement = () => {
       const teacherId = '111333'; // Real teacher ID from backend sample data
       console.log('🔑 TeacherId resolved to:', teacherId);
       
+      // Process attached files
+      const processedFiles = await Promise.all(
+        attachedFiles.map(async (fileData) => {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve({
+                name: fileData.name,
+                size: fileData.size,
+                type: fileData.type,
+                data: reader.result
+              });
+            };
+            reader.readAsDataURL(fileData.file);
+          });
+        })
+      );
+
       const materialData = {
         title: materialForm.title || '',
         description: materialForm.description || '',
@@ -161,13 +184,10 @@ const MaterialManagement = () => {
         tags: (materialForm.tags || '').split(',').map(tag => tag.trim()).filter(Boolean),
         videoUrl: materialForm.videoUrl || null,
         pdfUrl: materialForm.pdfUrl || null,
-        thumbnailUrl: materialForm.thumbnailUrl || null
+        thumbnailUrl: materialForm.thumbnailUrl || null,
+        attachments: processedFiles
       };
       
-      console.log('🔍 Form values check:', {
-        'materialForm.difficulty': materialForm.difficulty,
-        'materialForm.duration': materialForm.duration,
-      });
       console.log('📊 Sending material data to API:', materialData);
       console.log('✅ Required fields check:', {
         title: !!materialData.title,
@@ -190,7 +210,7 @@ const MaterialManagement = () => {
         }
       } else {
         // Создание нового материала
-        console.log('➕ Creating new material');
+        console.log('➕ Creating new material with attachments:', processedFiles.length);
         result = await apiClient.createMaterial(materialData);
         console.log('✅ Material created successfully:', result);
         
@@ -246,35 +266,26 @@ const MaterialManagement = () => {
     if (!materialToDelete) return;
     
     try {
-      console.log('🗑️ Deleting material:', materialToDelete.id);
       await apiClient.deleteMaterial(materialToDelete.id);
-      
-      // Отправляем WebSocket событие об удалении материала
-      if (socket && socket.connected) {
-        console.log('📡 Sending material_deleted event via WebSocket');
-        socket.emit('material_deleted', { 
-          materialId: materialToDelete.id,
-          materialTitle: materialToDelete.title 
-        });
-      } else {
-        console.warn('⚠️ Socket not connected, real-time deletion update skipped');
-      }
       
       // Reload materials from server to get updated list
       await loadMaterials();
       
       setShowDeleteDialog(false);
       setMaterialToDelete(null);
-      console.log('✅ Material deleted successfully');
     } catch (error) {
       console.error('❌ Error deleting material:', error);
-      alert('Ошибка при удалении материала: ' + error.message);
     }
   };
 
-  const cancelDeleteMaterial = () => {
-    setShowDeleteDialog(false);
-    setMaterialToDelete(null);
+  const handleViewMaterial = (material) => {
+    setViewingMaterial(material);
+    setShowMaterialViewer(true);
+  };
+
+  const handleCloseMaterialViewer = () => {
+    setShowMaterialViewer(false);
+    setViewingMaterial(null);
   };
 
   const handlePublishMaterial = async (materialId, isPublished) => {
@@ -306,6 +317,7 @@ const MaterialManagement = () => {
       pdfUrl: '',
       thumbnailUrl: ''
     });
+    setAttachedFiles([]);
     setEditingMaterial(null);
   };
 
@@ -445,6 +457,10 @@ const MaterialManagement = () => {
     },
     unpublishButton: {
       background: '#6b7280',
+      color: 'white'
+    },
+    viewButton: {
+      background: '#8b5cf6',
       color: 'white'
     },
     editButton: {
@@ -684,6 +700,13 @@ const MaterialManagement = () => {
                   </button>
                   
                   <button
+                    style={{...pageStyles.actionButton, ...pageStyles.viewButton}}
+                    onClick={() => handleViewMaterial(material)}
+                  >
+                    👁️ Просмотреть
+                  </button>
+                  
+                  <button
                     style={{...pageStyles.actionButton, ...pageStyles.editButton}}
                     onClick={() => handleEditMaterial(material)}
                   >
@@ -811,6 +834,15 @@ const MaterialManagement = () => {
                 value={materialForm.content}
                 onChange={(e) => setMaterialForm({...materialForm, content: e.target.value})}
                 placeholder="Основное содержание материала..."
+              />
+            </div>
+
+            <div style={pageStyles.formGroup}>
+              <label style={pageStyles.label}>Прикрепленные файлы</label>
+              <FileUploader 
+                onFilesSelected={setAttachedFiles}
+                maxFiles={5}
+                maxSize={10 * 1024 * 1024} // 10MB
               />
             </div>
 
@@ -973,6 +1005,14 @@ const MaterialManagement = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Material Viewer Modal */}
+      {showMaterialViewer && viewingMaterial && (
+        <MaterialViewer
+          material={viewingMaterial}
+          onClose={handleCloseMaterialViewer}
+        />
       )}
     </div>
   );

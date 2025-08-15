@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import apiClient from '../services/apiClient';
+import MaterialViewer from '../components/MaterialViewer';
 
 const MaterialsPage = () => {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ const MaterialsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [bookmarks, setBookmarks] = useState([]);
   const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
 
   const categories = [
     { id: 'all', name: 'Все разделы', icon: '📚' },
@@ -167,8 +169,8 @@ const MaterialsPage = () => {
         url: item.videoUrl || item.pdfUrl || '#',
         content: item.content,
         tags: item.tags || [],
-        views: Math.floor(Math.random() * 2000) + 100, // Mock views for now
-        rating: (4.0 + Math.random() * 1.0).toFixed(1), // Mock rating for now
+        views: item.views || 0,
+        rating: item.rating || '0.0',
         isBookmarked: bookmarks.includes(item.id),
         teacherId: item.teacherId
       }));
@@ -179,50 +181,9 @@ const MaterialsPage = () => {
     } catch (error) {
       console.error('❌ Error loading materials:', error);
       
-      // Quick fallback with sample materials to prevent hanging
-      if (error.message === 'API timeout' || error.code === 'NETWORK_ERROR') {
-        console.log('⚡ Using quick fallback materials due to slow API');
-        const fallbackMaterials = [
-          {
-            id: 1,
-            title: 'Основы механики',
-            description: 'Изучение основных законов механики',
-            type: 'text',
-            category: 'mechanics',
-            duration: '15 мин',
-            difficulty: 'easy',
-            thumbnail: '📄',
-            url: '#',
-            content: 'Основы механики включают изучение движения тел...',
-            tags: ['механика', 'основы'],
-            views: 1250,
-            rating: '4.5',
-            isBookmarked: false,
-            teacherId: 1
-          },
-          {
-            id: 2,
-            title: 'Электрические цепи',
-            description: 'Анализ простых электрических цепей',
-            type: 'video',
-            category: 'electricity',
-            duration: '20 мин',
-            difficulty: 'medium',
-            thumbnail: '🎥',
-            url: '#',
-            content: 'Электрические цепи - основа электротехники...',
-            tags: ['электричество', 'цепи'],
-            views: 890,
-            rating: '4.3',
-            isBookmarked: false,
-            teacherId: 1
-          }
-        ];
-        setMaterials(fallbackMaterials);
-      } else {
-        // Show empty state for other errors
-        setMaterials([]);
-      }
+      // No fallback materials - show empty state
+      setMaterials([]);
+      console.log('📚 No materials available');
     } finally {
       setLoading(false);
     }
@@ -266,8 +227,27 @@ const MaterialsPage = () => {
     const matchesSearch = material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          material.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || material.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory;    
   });
+
+  const openMaterial = async (material) => {
+    try {
+      // Load full material content if not already loaded
+      if (!material.content || material.content.length < 100) {
+        const fullMaterial = await apiClient.getMaterial(material.id);
+        setSelectedMaterial(fullMaterial);
+      } else {
+        setSelectedMaterial(material);
+      }
+    } catch (error) {
+      console.error('Error loading material:', error);
+      setSelectedMaterial(material); // Show what we have
+    }
+  };
+
+  const closeMaterial = () => {
+    setSelectedMaterial(null);
+  };
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
@@ -594,6 +574,7 @@ const MaterialsPage = () => {
                   </button>
                   
                   <button
+                    onClick={() => openMaterial(material)}
                     style={pageStyles.startBtn}
                     onMouseEnter={(e) => {
                       e.target.style.background = 'rgba(255, 255, 255, 0.3)';
@@ -602,7 +583,7 @@ const MaterialsPage = () => {
                       e.target.style.background = 'rgba(255, 255, 255, 0.2)';
                     }}
                   >
-                    Начать изучение
+                    Открыть материал
                   </button>
                 </div>
               </div>
@@ -615,6 +596,14 @@ const MaterialsPage = () => {
           <h3>Материалы не найдены</h3>
           <p>Попробуйте изменить критерии поиска</p>
         </div>
+      )}
+
+      {/* Material Viewer Modal */}
+      {selectedMaterial && (
+        <MaterialViewer 
+          material={selectedMaterial} 
+          onClose={closeMaterial}
+        />
       )}
     </div>
   );

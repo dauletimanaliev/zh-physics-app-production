@@ -9,6 +9,8 @@ import uvicorn
 import os
 from database import Database
 import json
+import traceback
+from datetime import datetime
 
 # Initialize FastAPI app
 app = FastAPI(title="Physics Bot API", version="1.0.0")
@@ -790,55 +792,71 @@ async def get_teacher_materials(teacher_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/materials")
-async def create_material(material: Material):
-    """Create a new material"""
+async def create_material(material_data: Dict[str, Any]):
+    """Create a new material with optional file attachments"""
     try:
-        print(f"➕ Creating new material: {material.title}")
-        print(f"📊 Material data: {material.dict()}")
-        print(f"🔍 Raw request data received")
+        print(f"📝 Creating new material: {material_data.get('title', 'Untitled')}")
         
-        # Convert teacherId to int if it's a string
-        teacher_id = material.teacherId
-        if isinstance(teacher_id, str):
-            try:
-                teacher_id = int(teacher_id)
-            except ValueError:
-                teacher_id = None
+        # Extract attachments if present
+        attachments = material_data.pop('attachments', [])
         
-        # Insert material into database
-        material_id = await db.create_material(
-            title=material.title,
-            description=material.description or "",
-            content=material.content or "",
-            type=material.type,
-            category=material.category,
-            difficulty=material.difficulty,
-            duration=material.duration,
-            is_published=material.isPublished,
-            tags=json.dumps(material.tags),
-            video_url=material.videoUrl,
-            pdf_url=material.pdfUrl,
-            thumbnail_url=material.thumbnailUrl,
-            teacher_id=teacher_id
-        )
+        # Convert material to dict for database insertion
+        material_dict = {
+            'title': material_data.get('title', ''),
+            'description': material_data.get('description', ''),
+            'content': material_data.get('content', ''),
+            'type': material_data.get('type', 'text'),
+            'category': material_data.get('category', 'mechanics'),
+            'difficulty': material_data.get('difficulty', 'easy'),
+            'duration': material_data.get('duration', 10),
+            'is_published': material_data.get('isPublished', False),
+            'tags': material_data.get('tags', ''),
+            'video_url': material_data.get('videoUrl', ''),
+            'pdf_url': material_data.get('pdfUrl', ''),
+            'thumbnail_url': material_data.get('thumbnailUrl', ''),
+            'teacher_id': material_data.get('teacherId', 1),
+            'created_at': datetime.now().isoformat(),
+            'updated_at': datetime.now().isoformat()
+        }
         
-        # Get the complete created material from database
-        created_material = await db.get_material_by_id(material_id)
+        # Process attachments and store as JSON
+        if attachments:
+            processed_attachments = []
+            for attachment in attachments:
+                processed_attachment = {
+                    'name': attachment.get('name', ''),
+                    'type': attachment.get('type', ''),
+                    'size': attachment.get('size', 0),
+                    'data': attachment.get('data', ''),  # Base64 data
+                    'uploaded_at': datetime.now().isoformat()
+                }
+                processed_attachments.append(processed_attachment)
+            
+            material_dict['attachments'] = json.dumps(processed_attachments)
+            print(f"📎 Processing {len(processed_attachments)} attachments")
+        
+        # Add material to database
+        material_id = await db.add_material(material_dict)
         
         print(f"✅ Material created successfully with ID: {material_id}")
-        return created_material
+        return {
+            "message": "Material created successfully",
+            "material_id": material_id,
+            "material": {**material_dict, "id": material_id}
+        }
     except Exception as e:
         print(f"❌ Error creating material: {e}")
-        print(f"🔍 Exception type: {type(e)}")
-        import traceback
         print(f"📜 Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/materials/{material_id}")
 async def update_material(material_id: int, update_data: Dict[str, Any]):
-    """Update an existing material"""
+    """Update an existing material with optional file attachments"""
     try:
-        print(f"✏️ Updating material {material_id}: {update_data}")
+        print(f"✏️ Updating material {material_id}: {update_data.get('title', 'Unknown')}")
+        
+        # Extract attachments if present
+        attachments = update_data.pop('attachments', None)
         
         # Convert frontend field names to database field names
         if 'teacherId' in update_data:
@@ -852,7 +870,30 @@ async def update_material(material_id: int, update_data: Dict[str, Any]):
         if 'thumbnailUrl' in update_data:
             update_data['thumbnail_url'] = update_data.pop('thumbnailUrl')
         
-        print(f"🔄 Converted data for database: {update_data}")
+        # Process attachments and store as JSON
+        if attachments is not None:
+            if attachments:  # If there are attachments
+                processed_attachments = []
+                for attachment in attachments:
+                    processed_attachment = {
+                        'name': attachment.get('name', ''),
+                        'type': attachment.get('type', ''),
+                        'size': attachment.get('size', 0),
+                        'data': attachment.get('data', ''),  # Base64 data
+                        'uploaded_at': datetime.now().isoformat()
+                    }
+                    processed_attachments.append(processed_attachment)
+                
+                update_data['attachments'] = json.dumps(processed_attachments)
+                print(f"📎 Processing {len(processed_attachments)} attachments")
+            else:  # If attachments array is empty, clear attachments
+                update_data['attachments'] = json.dumps([])
+                print("🗑️ Clearing attachments")
+        
+        # Add updated timestamp
+        update_data['updated_at'] = datetime.now().isoformat()
+        
+        print(f"🔄 Converted data for database (keys): {list(update_data.keys())}")
         
         # Update material in database
         success = await db.update_material(material_id, update_data)
@@ -869,6 +910,7 @@ async def update_material(material_id: int, update_data: Dict[str, Any]):
         raise
     except Exception as e:
         print(f"❌ Error updating material: {e}")
+        print(f"📜 Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/materials/{material_id}")

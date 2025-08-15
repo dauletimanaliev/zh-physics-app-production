@@ -2,7 +2,7 @@
 // SCALABLE BACKEND v1.0 - Full backend integration with SQLite/PostgreSQL
 const API_BASE_URL = process.env.REACT_APP_API_URL || 
   (process.env.NODE_ENV === 'production' 
-    ? 'https://physics-mini-app-api.railway.app/api'  // Production API
+    ? 'https://web-production-2678c.up.railway.app/api'  // Production API
     : 'http://localhost:8000/api');  // Development API
 
 class ApiClient {
