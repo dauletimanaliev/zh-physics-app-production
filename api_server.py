@@ -932,6 +932,12 @@ async def create_material(material_data: Dict[str, Any]):
         print(f"📎 Found {len(attachments)} attachments")
         
         # Convert material to dict for database insertion
+        tags = material_data.get('tags', [])
+        if isinstance(tags, list):
+            tags_json = json.dumps(tags)
+        else:
+            tags_json = str(tags) if tags else json.dumps([])
+            
         material_dict = {
             'title': material_data.get('title', ''),
             'description': material_data.get('description', ''),
@@ -941,7 +947,7 @@ async def create_material(material_data: Dict[str, Any]):
             'difficulty': material_data.get('difficulty', 'easy'),
             'duration': material_data.get('duration', 10),
             'is_published': material_data.get('isPublished', False),
-            'tags': material_data.get('tags', ''),
+            'tags': tags_json,
             'video_url': material_data.get('videoUrl', ''),
             'pdf_url': material_data.get('pdfUrl', ''),
             'thumbnail_url': material_data.get('thumbnailUrl', ''),
