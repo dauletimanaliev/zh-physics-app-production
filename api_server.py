@@ -1051,7 +1051,12 @@ async def get_material_content(material_id: int):
         if not material:
             raise HTTPException(status_code=404, detail="Material not found")
         
-        print(f"✅ Material content loaded successfully")
+        print(f"✅ Material content loaded: {material.get('title', 'No title')}")
+        print(f"📎 Attachments in response: {material.get('attachments', 'No attachments')}")
+        print(f"📊 Attachments type: {type(material.get('attachments'))}")
+        if material.get('attachments'):
+            print(f"📋 Attachments count: {len(material.get('attachments', []))}")
+        
         return material
     except HTTPException:
         raise
