@@ -91,27 +91,48 @@ const MaterialsPage = () => {
   const loadMaterials = async () => {
     try {
       setLoading(true);
-      console.log('📚 Loading published materials for student...');
+      console.log('📚 Loading ALL published materials for student (no limits)...');
       
       // Get user data from localStorage and AuthContext
       const userData = user || JSON.parse(localStorage.getItem('user') || '{}');
       console.log('👤 User data for materials:', userData);
       
-      // Try to get global materials (works in both dev and production)
       let materialsData = [];
+      
+      // Try multiple sources to get ALL materials created by admins/teachers
       try {
-        const response = await apiClient.getMaterialsForStudent();
-        console.log('📚 Global materials response:', response);
+        console.log('🔗 Loading ALL global materials from teachers/admins...');
         
-        if (Array.isArray(response)) {
-          materialsData = response;
-        } else if (response && Array.isArray(response.materials)) {
-          materialsData = response.materials;
+        // 1. Get global materials (shared by teachers)
+        const sharedMaterials = await apiClient.getGlobalMaterials();
+        if (sharedMaterials && sharedMaterials.length > 0) {
+          const publishedShared = sharedMaterials.filter(material => material.isPublished !== false);
+          materialsData = [...materialsData, ...publishedShared];
+          console.log('✅ Loaded shared materials from teachers:', publishedShared.length);
         }
         
-        console.log('📊 Global materials loaded:', materialsData.length);
+        // 2. Get materials from API (all published materials)
+        const response = await apiClient.getMaterialsForStudent();
+        console.log('📚 API materials response:', response);
+        
+        let apiMaterials = [];
+        if (Array.isArray(response)) {
+          apiMaterials = response;
+        } else if (response && Array.isArray(response.materials)) {
+          apiMaterials = response.materials;
+        }
+        
+        // Merge API materials with existing, avoiding duplicates
+        apiMaterials.forEach(apiMaterial => {
+          const exists = materialsData.find(m => m.id === apiMaterial.id);
+          if (!exists) {
+            materialsData.push(apiMaterial);
+          }
+        });
+        
+        console.log('📊 Total materials loaded from all sources:', materialsData.length);
       } catch (error) {
-        console.error('❌ Error loading global materials:', error);
+        console.error('❌ Error loading materials:', error);
       }
       
       // Get user data from localStorage and AuthContext

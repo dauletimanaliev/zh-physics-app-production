@@ -1,0 +1,11 @@
+# Windsurf Deploys Configuration (Beta)
+# Physics Mini App Production Deployment
+project_id: 26dd1bc0-5efc-4dfa-8f1d-11d16a045d18
+name: physics-mini-app-production
+framework: create-react-app
+build:
+  command: npm run build
+  directory: build
+environment:
+  REACT_APP_API_URL: https://physics-mini-app-api.railway.app/api
+  REACT_APP_ENV: production

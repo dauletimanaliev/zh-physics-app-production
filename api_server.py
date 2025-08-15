@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from fastapi.exceptions import RequestValidationError
+from pydantic import BaseModel, ValidationError
 from typing import List, Optional, Dict, Any
 import asyncio
 import uvicorn
@@ -14,14 +15,25 @@ app = FastAPI(title="Physics Bot API", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3003", "http://127.0.0.1:3003", "http://localhost:3008", "http://127.0.0.1:3008"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3003", "http://127.0.0.1:3003", "http://localhost:3008", "http://127.0.0.1:3008", "https://zh-physics-app.windsurf.build"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Initialize database
-db = Database()
+db_file = os.environ.get('DATABASE_FILE', 'ent_bot.db')
+db = Database(db_file)
+
+# Custom validation error handler
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"❌ Validation error: {exc}")
+    print(f"📜 Error details: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body}
+    )
 
 # Pydantic models
 class User(BaseModel):
@@ -47,18 +59,18 @@ class ScheduleEntry(BaseModel):
 
 class Material(BaseModel):
     title: str
-    description: str
-    content: str
+    description: Optional[str] = ""
+    content: Optional[str] = ""
     type: str  # text, video, pdf, interactive
     category: str  # mechanics, thermodynamics, electricity, etc.
-    difficulty: str  # easy, medium, hard
-    duration: int  # minutes
+    difficulty: str = "easy"  # easy, medium, hard
+    duration: int = 10  # minutes
     isPublished: bool = False
     tags: List[str] = []
     videoUrl: Optional[str] = None
     pdfUrl: Optional[str] = None
     thumbnailUrl: Optional[str] = None
-    teacherId: int
+    teacherId: Optional[int] = None
 
 # Startup event
 @app.on_event("startup")
@@ -761,17 +773,17 @@ async def logout_user(user_id: int):
 
 # Material Management Endpoints for Teachers
 
-@app.get("/api/teacher/{teacher_id}/materials")
+@app.get("/api/materials/teacher/{teacher_id}")
 async def get_teacher_materials(teacher_id: int):
     """Get all materials created by a specific teacher"""
     try:
         print(f"📚 Loading materials for teacher: {teacher_id}")
         
         # Get materials from database where teacher_id matches
-        materials = db.get_materials_by_teacher(teacher_id)
+        materials = await db.get_materials_by_teacher(teacher_id)
         
         print(f"✅ Found {len(materials)} materials for teacher {teacher_id}")
-        return materials
+        return {"materials": materials}
     except Exception as e:
         print(f"❌ Error loading teacher materials: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -781,12 +793,22 @@ async def create_material(material: Material):
     """Create a new material"""
     try:
         print(f"➕ Creating new material: {material.title}")
+        print(f"📊 Material data: {material.dict()}")
+        print(f"🔍 Raw request data received")
+        
+        # Convert teacherId to int if it's a string
+        teacher_id = material.teacherId
+        if isinstance(teacher_id, str):
+            try:
+                teacher_id = int(teacher_id)
+            except ValueError:
+                teacher_id = None
         
         # Insert material into database
-        material_id = db.create_material(
+        material_id = await db.create_material(
             title=material.title,
-            description=material.description,
-            content=material.content,
+            description=material.description or "",
+            content=material.content or "",
             type=material.type,
             category=material.category,
             difficulty=material.difficulty,
@@ -796,31 +818,19 @@ async def create_material(material: Material):
             video_url=material.videoUrl,
             pdf_url=material.pdfUrl,
             thumbnail_url=material.thumbnailUrl,
-            teacher_id=material.teacherId
+            teacher_id=teacher_id
         )
         
-        # Return the created material with ID
-        created_material = {
-            "id": material_id,
-            "title": material.title,
-            "description": material.description,
-            "content": material.content,
-            "type": material.type,
-            "category": material.category,
-            "difficulty": material.difficulty,
-            "duration": material.duration,
-            "isPublished": material.isPublished,
-            "tags": material.tags,
-            "videoUrl": material.videoUrl,
-            "pdfUrl": material.pdfUrl,
-            "thumbnailUrl": material.thumbnailUrl,
-            "teacherId": material.teacherId
-        }
+        # Get the complete created material from database
+        created_material = await db.get_material_by_id(material_id)
         
         print(f"✅ Material created successfully with ID: {material_id}")
         return created_material
     except Exception as e:
         print(f"❌ Error creating material: {e}")
+        print(f"🔍 Exception type: {type(e)}")
+        import traceback
+        print(f"📜 Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/materials/{material_id}")
@@ -829,14 +839,28 @@ async def update_material(material_id: int, update_data: Dict[str, Any]):
     try:
         print(f"✏️ Updating material {material_id}: {update_data}")
         
+        # Convert frontend field names to database field names
+        if 'teacherId' in update_data:
+            update_data['teacher_id'] = update_data.pop('teacherId')
+        if 'isPublished' in update_data:
+            update_data['is_published'] = update_data.pop('isPublished')
+        if 'videoUrl' in update_data:
+            update_data['video_url'] = update_data.pop('videoUrl')
+        if 'pdfUrl' in update_data:
+            update_data['pdf_url'] = update_data.pop('pdfUrl')
+        if 'thumbnailUrl' in update_data:
+            update_data['thumbnail_url'] = update_data.pop('thumbnailUrl')
+        
+        print(f"🔄 Converted data for database: {update_data}")
+        
         # Update material in database
-        success = db.update_material(material_id, update_data)
+        success = await db.update_material(material_id, update_data)
         
         if not success:
             raise HTTPException(status_code=404, detail="Material not found")
         
         # Get updated material
-        updated_material = db.get_material_by_id(material_id)
+        updated_material = await db.get_material_by_id(material_id)
         
         print(f"✅ Material {material_id} updated successfully")
         return updated_material
@@ -853,32 +877,32 @@ async def delete_material(material_id: int):
         print(f"🗑️ Deleting material: {material_id}")
         
         # Delete material from database
-        success = db.delete_material(material_id)
+        success = await db.delete_material(material_id)
         
         if not success:
             raise HTTPException(status_code=404, detail="Material not found")
         
         print(f"✅ Material {material_id} deleted successfully")
-        return {"message": "Material deleted successfully"}
+        return {"success": True, "message": "Material deleted successfully"}
     except HTTPException:
         raise
     except Exception as e:
         print(f"❌ Error deleting material: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/student/{student_id}/materials")
-async def get_materials_for_student(student_id: int, category: Optional[str] = None):
-    """Get published materials for a student, optionally filtered by category"""
+@app.get("/api/materials")
+async def get_materials_for_student(category: Optional[str] = None):
+    """Get published materials for students, optionally filtered by category"""
     try:
-        print(f"📖 Loading published materials for student: {student_id}")
+        print(f"📖 Loading published materials, category: {category or 'all'}")
         
         # Get only published materials
-        materials = db.get_published_materials(category=category)
+        materials = await db.get_published_materials(category=category)
         
-        print(f"✅ Found {len(materials)} published materials for student")
-        return materials
+        print(f"✅ Found {len(materials)} published materials")
+        return {"materials": materials}
     except Exception as e:
-        print(f"❌ Error loading student materials: {e}")
+        print(f"❌ Error loading materials: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/materials/{material_id}/content")
@@ -888,7 +912,7 @@ async def get_material_content(material_id: int):
         print(f"📄 Loading content for material: {material_id}")
         
         # Get material content from database
-        material = db.get_material_by_id(material_id)
+        material = await db.get_material_by_id(material_id)
         
         if not material:
             raise HTTPException(status_code=404, detail="Material not found")

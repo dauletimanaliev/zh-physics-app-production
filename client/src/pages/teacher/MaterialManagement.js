@@ -63,8 +63,8 @@ const MaterialManagement = () => {
       setLoading(true);
       console.log('🔍 Loading teacher materials...');
       
-      // Global teacher ID for all users with admin code 111333
-      const teacherId = 'global_teacher_111333';
+      // Use real teacher telegram_id from backend
+      const teacherId = '111333'; // Real teacher ID from backend sample data
       console.log('🔑 Loading materials for teacherId:', teacherId);
       
       // Load teacher's materials from API
@@ -144,8 +144,8 @@ const MaterialManagement = () => {
         telegram_id: user?.telegram_id
       });
       
-      // Global teacher ID for all users with admin code 111333
-      const teacherId = 'global_teacher_111333';
+      // Use real teacher telegram_id from backend
+      const teacherId = '111333'; // Real teacher ID from backend sample data
       console.log('🔑 TeacherId resolved to:', teacherId);
       
       const materialData = {
@@ -154,14 +154,14 @@ const MaterialManagement = () => {
         content: materialForm.content || '',
         type: materialForm.type || 'text',
         category: materialForm.category || 'mechanics',
-        difficulty: materialForm.difficulty,
-        duration: materialForm.duration,
+        difficulty: materialForm.difficulty || 'easy',
+        duration: materialForm.duration || 10,
         isPublished: materialForm.isPublished || false,
         teacherId: teacherId,
         tags: (materialForm.tags || '').split(',').map(tag => tag.trim()).filter(Boolean),
-        videoUrl: materialForm.videoUrl || '',
-        pdfUrl: materialForm.pdfUrl || '',
-        thumbnailUrl: materialForm.thumbnailUrl || ''
+        videoUrl: materialForm.videoUrl || null,
+        pdfUrl: materialForm.pdfUrl || null,
+        thumbnailUrl: materialForm.thumbnailUrl || null
       };
       
       console.log('🔍 Form values check:', {
@@ -279,9 +279,10 @@ const MaterialManagement = () => {
 
   const handlePublishMaterial = async (materialId, isPublished) => {
     try {
-      await apiClient.updateMaterial(materialId, { isPublished });
+      // Convert frontend field to backend field name
+      await apiClient.updateMaterial(materialId, { is_published: isPublished });
       setMaterials(materials.map(m => 
-        m.id === materialId ? { ...m, isPublished } : m
+        m.id === materialId ? { ...m, isPublished, is_published: isPublished } : m
       ));
       console.log(`✅ Material ${isPublished ? 'published' : 'unpublished'} successfully`);
     } catch (error) {
@@ -572,6 +573,7 @@ const MaterialManagement = () => {
           style={pageStyles.createButton}
           onClick={() => {
             resetMaterialForm();
+            setEditingMaterial(null);
             setShowCreateModal(true);
           }}
           onMouseEnter={(e) => {
