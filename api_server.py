@@ -6,6 +6,7 @@ from pydantic import BaseModel, ValidationError
 from typing import List, Optional, Dict, Any
 import asyncio
 import uvicorn
+import os
 from database import Database
 import json
 
@@ -15,7 +16,7 @@ app = FastAPI(title="Physics Bot API", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3003", "http://127.0.0.1:3003", "http://localhost:3008", "http://127.0.0.1:3008", "https://zh-physics-app.windsurf.build"],
+    allow_origins=["*"],  # Allow all origins for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
