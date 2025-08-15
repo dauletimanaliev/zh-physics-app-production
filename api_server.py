@@ -78,8 +78,58 @@ class Material(BaseModel):
 # Startup event
 @app.on_event("startup")
 async def startup_event():
+    """Initialize database on startup"""
+    global db
+    db = Database()
     await db.init_db()
-    print("✅ Database initialized")
+    
+    # Add test content to material ID 7 if it exists and is empty
+    try:
+        material = await db.get_material_by_id(7)
+        if material and (not material.get('content') or material.get('content').strip() == ''):
+            test_content = '''# Закон Подлости в физике
+
+Это важный физический закон, который гласит: "Если что-то может пойти не так, то оно обязательно пойдет не так".
+
+## Основные принципы:
+1. Вероятность неудачи прямо пропорциональна важности эксперимента
+2. Чем точнее нужен результат, тем больше вероятность ошибки
+3. Оборудование ломается в самый неподходящий момент
+
+## Примеры применения:
+- Лабораторные работы
+- Научные эксперименты  
+- Демонстрации на уроках
+
+**Помните:** Всегда имейте план Б!'''
+            
+            # Test attachments
+            import json
+            test_attachments = [
+                {
+                    'name': 'test_image.png',
+                    'type': 'image/png',
+                    'size': 95,
+                    'data': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+                    'uploaded_at': '2025-08-15T22:00:00.000Z'
+                },
+                {
+                    'name': 'physics_formula.pdf',
+                    'type': 'application/pdf',
+                    'size': 1024,
+                    'data': 'data:application/pdf;base64,JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDQgMCBSCi9NZWRpYUJveCBbMCAwIDYxMiA3OTJdCj4+CmVuZG9iago=',
+                    'uploaded_at': '2025-08-15T22:00:00.000Z'
+                }
+            ]
+            
+            update_data = {
+                'content': test_content,
+                'attachments': json.dumps(test_attachments)
+            }
+            await db.update_material(7, update_data)
+            print("✅ Test content and attachments added to material ID 7")
+    except Exception as e:
+        print(f"⚠️ Could not add test content: {e}")
 
 # Health check
 @app.get("/api/health")
