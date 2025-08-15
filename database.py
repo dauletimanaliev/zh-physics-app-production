@@ -389,10 +389,8 @@ class Database:
             if not set_clauses:
                 return False
                 
-            set_clauses.append("updated_at = CURRENT_TIMESTAMP")
-            values.append(material_id)
-            
             query = f"UPDATE materials SET {', '.join(set_clauses)} WHERE id = ?"
+            values.append(material_id)
             cursor = await db.execute(query, values)
             await db.commit()
             return cursor.rowcount > 0
