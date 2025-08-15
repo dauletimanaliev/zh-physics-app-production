@@ -10,6 +10,14 @@ class Database:
     async def init_db(self):
         """Initialize database with all required tables"""
         async with aiosqlite.connect(self.db_path) as db:
+            # Check if attachments column exists, if not add it
+            cursor = await db.execute("PRAGMA table_info(materials)")
+            columns = await cursor.fetchall()
+            column_names = [col[1] for col in columns]
+            
+            if 'attachments' not in column_names:
+                await db.execute("ALTER TABLE materials ADD COLUMN attachments TEXT")
+                print("✅ Added attachments column to materials table")
             # Users table
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS users (
@@ -49,6 +57,7 @@ class Database:
                     pdf_url TEXT,
                     thumbnail_url TEXT,
                     teacher_id INTEGER,
+                    attachments TEXT,  -- JSON array of file attachments
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     language TEXT DEFAULT 'ru',
