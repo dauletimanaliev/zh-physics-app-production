@@ -419,7 +419,7 @@ class Database:
                 SELECT id, title, description, content, type, category, difficulty, 
                        duration, is_published as isPublished, tags, video_url as videoUrl, 
                        pdf_url as pdfUrl, thumbnail_url as thumbnailUrl, teacher_id as teacherId,
-                       created_at, updated_at
+                       attachments, created_at, updated_at
                 FROM materials 
                 WHERE id = ?
             """, (material_id,)) as cursor:
@@ -434,6 +434,16 @@ class Database:
                             material['tags'] = []
                     else:
                         material['tags'] = []
+                    
+                    # Parse attachments from JSON
+                    if material.get('attachments'):
+                        try:
+                            material['attachments'] = json.loads(material['attachments'])
+                        except:
+                            material['attachments'] = []
+                    else:
+                        material['attachments'] = []
+                    
                     return material
                 return None
 
@@ -446,7 +456,7 @@ class Database:
                 SELECT id, title, description, content, type, category, difficulty, 
                        duration, is_published, tags, video_url as videoUrl, 
                        pdf_url as pdfUrl, thumbnail_url as thumbnailUrl, teacher_id as teacherId,
-                       created_at, updated_at
+                       attachments, created_at, updated_at
                 FROM materials 
                 ORDER BY created_at DESC
             """) as cursor:
@@ -462,6 +472,16 @@ class Database:
                             material['tags'] = []
                     else:
                         material['tags'] = []
+                    
+                    # Parse attachments from JSON
+                    if material.get('attachments'):
+                        try:
+                            material['attachments'] = json.loads(material['attachments'])
+                        except:
+                            material['attachments'] = []
+                    else:
+                        material['attachments'] = []
+                    
                     materials.append(material)
                 return materials
 
