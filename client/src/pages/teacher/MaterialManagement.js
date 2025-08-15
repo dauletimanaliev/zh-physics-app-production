@@ -181,7 +181,7 @@ const MaterialManagement = () => {
         duration: materialForm.duration || 10,
         isPublished: materialForm.isPublished || false,
         teacherId: teacherId,
-        tags: (materialForm.tags || '').split(',').map(tag => tag.trim()).filter(Boolean),
+        tags: materialForm.tags || '',
         videoUrl: materialForm.videoUrl || null,
         pdfUrl: materialForm.pdfUrl || null,
         thumbnailUrl: materialForm.thumbnailUrl || null,

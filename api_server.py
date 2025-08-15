@@ -12,8 +12,47 @@ import json
 import traceback
 from datetime import datetime
 
-# Initialize FastAPI app
-app = FastAPI(title="Physics Bot API", version="1.0.0")
+# Lifespan event handler to replace deprecated on_event
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler with full error protection"""
+    try:
+        global db
+        print("🚀 Starting API server...")
+        
+        # Safe database initialization
+        try:
+            db = Database()
+            await db.init_db()
+            print("✅ Database initialized successfully")
+        except Exception as db_error:
+            print(f"❌ Database initialization error: {db_error}")
+            print(f"📜 DB Error traceback: {traceback.format_exc()}")
+            
+        # Safe test data creation
+        try:
+            await create_safe_test_data()
+        except Exception as test_error:
+            print(f"⚠️ Test data creation error: {test_error}")
+            
+        print("🎯 API server startup completed")
+        
+    except Exception as startup_error:
+        print(f"💥 CRITICAL STARTUP ERROR: {startup_error}")
+        print(f"📜 Startup error traceback: {traceback.format_exc()}")
+    
+    yield  # Server is running
+    
+    # Cleanup on shutdown
+    try:
+        print("🛑 Shutting down API server...")
+    except Exception as shutdown_error:
+        print(f"⚠️ Shutdown error: {shutdown_error}")
+
+# Initialize FastAPI app with lifespan
+app = FastAPI(title="Physics Bot API", version="1.0.0", lifespan=lifespan)
 
 # CORS middleware
 app.add_middleware(
@@ -28,15 +67,46 @@ app.add_middleware(
 db_file = os.environ.get('DATABASE_FILE', 'ent_bot.db')
 db = Database(db_file)
 
+# Global exception handler to prevent cascade errors
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    try:
+        error_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        print(f"🚨 CRITICAL ERROR [{error_id}]: {type(exc).__name__}: {str(exc)}")
+        print(f"📍 Request: {request.method} {request.url}")
+        print(f"📜 Traceback: {traceback.format_exc()}")
+        
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Internal server error",
+                "error_id": error_id,
+                "message": "Server encountered an error. Please try again."
+            }
+        )
+    except Exception as handler_error:
+        print(f"💥 HANDLER ERROR: {handler_error}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Critical system error"}
+        )
+
 # Custom validation error handler
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    print(f"❌ Validation error: {exc}")
-    print(f"📜 Error details: {exc.errors()}")
-    return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors(), "body": exc.body}
-    )
+    try:
+        print(f"❌ Validation error: {exc}")
+        print(f"📜 Error details: {exc.errors()}")
+        return JSONResponse(
+            status_code=422,
+            content={"detail": exc.errors(), "body": exc.body}
+        )
+    except Exception as e:
+        print(f"💥 Validation handler error: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Validation error processing failed"}
+        )
 
 # Pydantic models
 class User(BaseModel):
@@ -75,68 +145,58 @@ class Material(BaseModel):
     thumbnailUrl: Optional[str] = None
     teacherId: Optional[int] = None
 
-# Startup event
-@app.on_event("startup")
-async def startup_event():
-    """Initialize database on startup"""
-    global db
-    db = Database()
-    await db.init_db()
-    
-    # Add test content to material ID 7 if it exists and is empty
+
+async def create_safe_test_data():
+    """Safely create test data without causing cascade errors"""
     try:
-        material = await db.get_material_by_id(7)
-        if material and (not material.get('content') or material.get('content').strip() == ''):
-            test_content = '''# Закон Подлости в физике
-
-Это важный физический закон, который гласит: "Если что-то может пойти не так, то оно обязательно пойдет не так".
-
-## Основные принципы:
-1. Вероятность неудачи прямо пропорциональна важности эксперимента
-2. Чем точнее нужен результат, тем больше вероятность ошибки
-3. Оборудование ломается в самый неподходящий момент
-
-## Примеры применения:
-- Лабораторные работы
-- Научные эксперименты  
-- Демонстрации на уроках
-
-**Помните:** Всегда имейте план Б!'''
+        # Check if we have any materials
+        materials = await db.get_all_materials()
+        if not materials or len(materials) == 0:
+            print("📝 Creating initial test material...")
             
-            # Test attachments
-            import json
-            test_attachments = [
-                {
-                    'name': 'test_image.png',
-                    'type': 'image/png',
-                    'size': 95,
-                    'data': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
-                    'uploaded_at': '2025-08-15T22:00:00.000Z'
-                },
-                {
-                    'name': 'physics_formula.pdf',
-                    'type': 'application/pdf',
-                    'size': 1024,
-                    'data': 'data:application/pdf;base64,JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDQgMCBSCi9NZWRpYUJveCBbMCAwIDYxMiA3OTJdCj4+CmVuZG9iago=',
-                    'uploaded_at': '2025-08-15T22:00:00.000Z'
-                }
-            ]
-            
-            update_data = {
-                'content': test_content,
-                'attachments': json.dumps(test_attachments)
+            test_material = {
+                'title': 'Тестовый материал с вложениями',
+                'description': 'Материал для проверки отображения вложений',
+                'content': '''# Тестовый материал
+
+Это тестовый материал для проверки системы вложений.
+
+## Содержание:
+- Изображения
+- Документы
+- Видео файлы''',
+                'type': 'text',
+                'category': 'test',
+                'difficulty': 'easy',
+                'duration': 5,
+                'isPublished': True,
+                'tags': json.dumps(['тест', 'вложения']),
+                'attachments': json.dumps([
+                    {
+                        'name': 'test_image.png',
+                        'type': 'image/png',
+                        'size': 95,
+                        'data': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+                        'uploaded_at': datetime.now().isoformat()
+                    }
+                ]),
+                'created_at': datetime.now().isoformat(),
+                'updated_at': datetime.now().isoformat()
             }
-            await db.update_material(7, update_data)
-            print("✅ Test content and attachments added to material ID 7")
+            
+            material_id = await db.add_material(test_material)
+            print(f"✅ Created test material with ID: {material_id}")
+            
     except Exception as e:
-        print(f"⚠️ Could not add test content: {e}")
+        print(f"⚠️ Safe test data creation failed: {e}")
+        # Don't propagate the error
 
 # Health check
 @app.get("/api/health")
 async def health_check():
     return {"status": "OK", "service": "Physics Bot API"}
 
-# User endpoints
+# User endpoints with error protection
 @app.post("/api/users")
 async def create_user(user: User):
     try:
@@ -148,30 +208,22 @@ async def create_user(user: User):
         )
         return {"message": "User created successfully"}
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        print(f"❌ User creation error: {e}")
+        print(f"📜 Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=400, detail="Failed to create user")
 
 @app.get("/api/users/{telegram_id}")
 async def get_user(telegram_id: int):
     try:
         user = await db.get_user(telegram_id)
-        if not user:
+        if user:
+            return user
+        else:
             raise HTTPException(status_code=404, detail="User not found")
-        return user
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/users")
-async def create_user(user: User):
-    try:
-        await db.add_user(
-            telegram_id=user.telegram_id,
-            username=user.username,
-            first_name=user.first_name,
-            language=user.language or 'ru'
-        )
-        return {"success": True, "message": "Пользователь успешно создан"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"❌ Get user error: {e}")
+        print(f"📜 Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve user")
 
 @app.delete("/api/users/{user_id}")
 async def delete_user(user_id: int):

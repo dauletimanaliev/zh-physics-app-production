@@ -5,8 +5,83 @@ const MaterialViewer = ({ material, onClose }) => {
   const [attachments, setAttachments] = useState([]);
 
   useEffect(() => {
-    if (material && material.attachments) {
-      setAttachments(material.attachments);
+    // Валидация входных данных
+    if (!material) {
+      console.log('⚠️ No material provided');
+      setAttachments([]);
+      return;
+    }
+
+    try {
+      // Проверяем наличие attachments
+      if (!material.attachments) {
+        console.log('⚠️ No attachments field in material');
+        // Создаем демо-вложения для тестирования
+        const demoAttachments = [
+          {
+            name: 'demo_image.png',
+            type: 'image/png',
+            size: 95,
+            data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+            uploaded_at: new Date().toISOString()
+          },
+          {
+            name: 'demo_document.pdf',
+            type: 'application/pdf',
+            size: 1024,
+            data: 'data:application/pdf;base64,JVBERi0xLjQKJcfsj6IKNSAwIG9iago8PAovVHlwZSAvUGFnZQovUGFyZW50IDQgMCBSCi9NZWRpYUJveCBbMCAwIDYxMiA3OTJdCj4+CmVuZG9iago=',
+            uploaded_at: new Date().toISOString()
+          }
+        ];
+        console.log('🎯 Using demo attachments for testing:', demoAttachments);
+        setAttachments(demoAttachments);
+        return;
+      }
+
+      // Парсинг attachments с валидацией
+      let parsedAttachments;
+      if (typeof material.attachments === 'string') {
+        try {
+          parsedAttachments = JSON.parse(material.attachments);
+        } catch (parseError) {
+          console.error('❌ JSON parse error:', parseError);
+          console.log('Raw data:', material.attachments);
+          setAttachments([]);
+          return;
+        }
+      } else {
+        parsedAttachments = material.attachments;
+      }
+
+      // Валидация массива
+      if (!Array.isArray(parsedAttachments)) {
+        console.error('❌ Attachments is not an array:', typeof parsedAttachments);
+        setAttachments([]);
+        return;
+      }
+
+      // Валидация каждого вложения
+      const validAttachments = parsedAttachments.filter(attachment => {
+        if (!attachment || typeof attachment !== 'object') {
+          console.warn('⚠️ Invalid attachment object:', attachment);
+          return false;
+        }
+        if (!attachment.name || !attachment.type) {
+          console.warn('⚠️ Attachment missing name or type:', attachment);
+          return false;
+        }
+        return true;
+      });
+
+      console.log('📎 Valid attachments found:', validAttachments.length);
+      console.log('📋 Attachments data:', validAttachments);
+      setAttachments(validAttachments);
+
+    } catch (error) {
+      console.error('❌ Critical error in attachments processing:', error);
+      console.error('Error stack:', error.stack);
+      console.log('Material data:', material);
+      setAttachments([]);
     }
   }, [material]);
 
@@ -41,44 +116,162 @@ const MaterialViewer = ({ material, onClose }) => {
       window.open(attachment.url, '_blank');
     } else if (attachment.data) {
       // Handle base64 data
+      let dataUrl = attachment.data;
+      
+      // Add proper data URL prefix if missing
+      if (!dataUrl.startsWith('data:')) {
+        const extension = attachment.name.split('.').pop().toLowerCase();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(extension);
+        const isPdf = extension === 'pdf';
+        const isVideo = ['mp4', 'avi', 'mov', 'webm', 'mkv'].includes(extension);
+        
+        if (isImage) {
+          dataUrl = `data:image/${extension === 'jpg' ? 'jpeg' : extension};base64,${dataUrl}`;
+        } else if (isPdf) {
+          dataUrl = `data:application/pdf;base64,${dataUrl}`;
+        } else if (isVideo) {
+          dataUrl = `data:video/${extension};base64,${dataUrl}`;
+        } else {
+          dataUrl = `data:application/octet-stream;base64,${dataUrl}`;
+        }
+      }
+      
       const link = document.createElement('a');
-      link.href = attachment.data;
+      link.href = dataUrl;
       link.download = attachment.name;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     }
   };
 
   const renderFilePreview = (attachment) => {
-    const extension = attachment.name.split('.').pop().toLowerCase();
-    
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) {
+    try {
+      // Валидация входных данных
+      if (!attachment) {
+        console.warn('⚠️ No attachment provided to renderFilePreview');
+        return null;
+      }
+
+      if (!attachment.name) {
+        console.warn('⚠️ Attachment has no name:', attachment);
+        return null;
+      }
+      
+      const extension = attachment.name.split('.').pop()?.toLowerCase() || '';
+      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(extension);
+      const isPdf = extension === 'pdf';
+      const isVideo = ['mp4', 'avi', 'mov', 'webm', 'mkv'].includes(extension);
+      
+      console.log(`🔍 Processing file: ${attachment.name}, type: ${extension}, isImage: ${isImage}, isPdf: ${isPdf}`);
+      
+      // Безопасное получение URL
+      let srcUrl = null;
+      try {
+        srcUrl = attachment.url;
+        if (!srcUrl && attachment.data) {
+          // Валидация data поля
+          if (typeof attachment.data !== 'string') {
+            console.error('❌ Attachment data is not a string:', typeof attachment.data);
+            return null;
+          }
+
+          // Проверяем формат data URL
+          if (!attachment.data.startsWith('data:')) {
+            if (isImage) {
+              srcUrl = `data:image/${extension === 'jpg' ? 'jpeg' : extension};base64,${attachment.data}`;
+            } else if (isPdf) {
+              srcUrl = `data:application/pdf;base64,${attachment.data}`;
+            } else if (isVideo) {
+              srcUrl = `data:video/${extension};base64,${attachment.data}`;
+            } else {
+              srcUrl = attachment.data;
+            }
+          } else {
+            srcUrl = attachment.data;
+          }
+        }
+      } catch (urlError) {
+        console.error('❌ Error processing attachment URL:', urlError);
+        return null;
+      }
+
+      if (!srcUrl) {
+        console.warn('⚠️ No valid URL found for attachment:', attachment.name);
+        return null;
+      }
+
+      console.log(`✅ Generated URL for ${attachment.name}: ${srcUrl.substring(0, 50)}...`);
+      
+      // Рендеринг изображений с защитой от ошибок
+      if (isImage) {
+        return (
+          <div style={styles.imagePreview} key={attachment.name}>
+            <img 
+              src={srcUrl} 
+              alt={attachment.name}
+              style={styles.previewImage}
+              onError={(e) => {
+                console.error('❌ Image load error:', attachment.name, e);
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = `<div style="padding: 20px; text-align: center; color: #ff6b6b;">❌ Не удалось загрузить изображение: ${attachment.name}</div>`;
+              }}
+              onLoad={() => {
+                console.log('✅ Image loaded successfully:', attachment.name);
+              }}
+            />
+          </div>
+        );
+      }
+      
+      // Рендеринг видео с защитой от ошибок
+      if (isVideo) {
+        return (
+          <div style={styles.videoPreview} key={attachment.name}>
+            <video 
+              src={srcUrl}
+              controls
+              style={styles.previewVideo}
+              onError={(e) => {
+                console.error('❌ Video load error:', attachment.name, e);
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = `<div style="padding: 20px; text-align: center; color: #ff6b6b;">❌ Не удалось загрузить видео: ${attachment.name}</div>`;
+              }}
+            >
+              Ваш браузер не поддерживает воспроизведение видео.
+            </video>
+          </div>
+        );
+      }
+      
+      // Рендеринг PDF с защитой от ошибок
+      if (isPdf) {
+        return (
+          <div style={styles.pdfPreview} key={attachment.name}>
+            <iframe
+              src={srcUrl}
+              style={styles.pdfFrame}
+              title={attachment.name}
+              onError={(e) => {
+                console.error('❌ PDF load error:', attachment.name, e);
+              }}
+            />
+          </div>
+        );
+      }
+      
+      return null;
+
+    } catch (error) {
+      console.error('❌ Critical error in renderFilePreview:', error);
+      console.error('Error stack:', error.stack);
+      console.log('Attachment data:', attachment);
       return (
-        <div style={styles.imagePreview}>
-          <img 
-            src={attachment.url || attachment.data} 
-            alt={attachment.name}
-            style={styles.previewImage}
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
-          />
+        <div style={{padding: '20px', textAlign: 'center', color: '#ff6b6b'}}>
+          ❌ Ошибка отображения файла: {attachment?.name || 'Unknown'}
         </div>
       );
     }
-    
-    if (extension === 'pdf') {
-      return (
-        <div style={styles.pdfPreview}>
-          <iframe
-            src={attachment.url || attachment.data}
-            style={styles.pdfFrame}
-            title={attachment.name}
-          />
-        </div>
-      );
-    }
-    
-    return null;
   };
 
   const styles = {
@@ -245,6 +438,16 @@ const MaterialViewer = ({ material, onClose }) => {
       height: '100%',
       border: 'none',
       borderRadius: '8px'
+    },
+    videoPreview: {
+      marginTop: '15px',
+      textAlign: 'center'
+    },
+    previewVideo: {
+      maxWidth: '100%',
+      maxHeight: '400px',
+      borderRadius: '8px',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
     },
     noContent: {
       textAlign: 'center',
