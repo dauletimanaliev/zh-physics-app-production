@@ -317,18 +317,39 @@ async def get_teacher_students():
 async def get_teacher_stats():
     """Get teacher quick actions statistics"""
     try:
-        # Get real data from database
-        users = await db.get_all_users()
-        tests = await db.get_all_tests()
-        materials = await db.get_all_materials()
+        print("📊 Getting teacher stats...")
         
-        # Calculate real statistics
-        total_students = len([u for u in users if u.get('role') == 'student'])
-        active_tests = len([t for t in tests if t.get('is_published', False)])
-        total_materials = len([m for m in materials if m.get('is_published', False)])
+        # Get real data from database with error handling
+        try:
+            users = await db.get_all_users()
+            print(f"👥 Found {len(users)} users")
+        except Exception as e:
+            print(f"❌ Error getting users: {e}")
+            users = []
+            
+        try:
+            tests = await db.get_all_tests()
+            print(f"📝 Found {len(tests)} tests")
+        except Exception as e:
+            print(f"❌ Error getting tests: {e}")
+            tests = []
+            
+        try:
+            materials = await db.get_all_materials()
+            print(f"📚 Found {len(materials)} materials")
+        except Exception as e:
+            print(f"❌ Error getting materials: {e}")
+            materials = []
+        
+        # Calculate real statistics with safe defaults
+        total_students = len([u for u in users if u.get('role') == 'student']) if users else 0
+        active_tests = len([t for t in tests if t.get('is_published', False)]) if tests else 0
+        total_materials = len([m for m in materials if m.get('is_published', False)]) if materials else 0
+        
+        print(f"📈 Stats: {total_students} students, {active_tests} tests, {total_materials} materials")
         
         # For QuickActionsPage compatibility
-        return {
+        result = {
             "totalStudents": total_students,
             "activeTests": active_tests,
             "newMessages": 0,  # TODO: implement messaging system
@@ -337,16 +358,22 @@ async def get_teacher_stats():
             # Additional detailed stats for dashboard
             "detailed": {
                 "total_students": total_students,
-                "active_students": len([u for u in users if u.get('points', 0) > 0]),
-                "inactive_students": total_students - len([u for u in users if u.get('points', 0) > 0]),
+                "active_students": len([u for u in users if u.get('points', 0) > 0]) if users else 0,
+                "inactive_students": max(0, total_students - len([u for u in users if u.get('points', 0) > 0])) if users else 0,
                 "avg_points": round(sum(u.get('points', 0) for u in users) / total_students if total_students > 0 else 0, 1),
-                "total_tests_taken": sum(u.get('tests_completed', 0) for u in users),
+                "total_tests_taken": sum(u.get('tests_completed', 0) for u in users) if users else 0,
                 "published_tests": active_tests,
                 "published_materials": total_materials,
                 "top_performers": []  # Simplified for now
             }
         }
+        
+        print("✅ Teacher stats generated successfully")
+        return result
+        
     except Exception as e:
+        print(f"❌ Error in get_teacher_stats: {e}")
+        print(f"📜 Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/teacher/student/{student_id}")
