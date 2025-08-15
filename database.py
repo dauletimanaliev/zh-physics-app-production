@@ -368,6 +368,35 @@ class Database:
             await db.commit()
             return cursor.lastrowid
 
+    async def add_material(self, material_dict: Dict) -> int:
+        """Add a new material from dictionary and return its ID"""
+        async with aiosqlite.connect(self.db_path) as db:
+            # Build dynamic insert query
+            columns = []
+            values = []
+            placeholders = []
+            
+            for key, value in material_dict.items():
+                columns.append(key)
+                values.append(value)
+                placeholders.append('?')
+            
+            # Add required fields if missing
+            if 'subject' not in material_dict:
+                columns.append('subject')
+                values.append('Физика')
+                placeholders.append('?')
+            
+            if 'topic' not in material_dict:
+                columns.append('topic')
+                values.append(material_dict.get('category', 'Общее'))
+                placeholders.append('?')
+            
+            query = f"INSERT INTO materials ({', '.join(columns)}) VALUES ({', '.join(placeholders)})"
+            cursor = await db.execute(query, values)
+            await db.commit()
+            return cursor.lastrowid
+
     async def update_material(self, material_id: int, update_data: Dict) -> bool:
         """Update an existing material"""
         async with aiosqlite.connect(self.db_path) as db:
