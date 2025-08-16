@@ -8,6 +8,7 @@ import asyncio
 import uvicorn
 import os
 from database import Database
+from database_schedule import ScheduleDatabase
 import json
 import traceback
 from datetime import datetime
@@ -19,13 +20,15 @@ from contextlib import asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan event handler with full error protection"""
     try:
-        global db
+        global db, schedule_db
         print("🚀 Starting API server...")
         
         # Safe database initialization
         try:
             db = Database()
             await db.init_db()
+            schedule_db = ScheduleDatabase()
+            await schedule_db.init_schedule_tables()
             print("✅ Database initialized successfully")
         except Exception as db_error:
             print(f"❌ Database initialization error: {db_error}")
@@ -109,11 +112,26 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         )
 
 # Pydantic models
-class User(BaseModel):
+class UserCreate(BaseModel):
     telegram_id: int
     username: Optional[str] = None
     first_name: Optional[str] = None
     language: str = 'ru'
+
+class ScheduleCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    visibility: str = 'private'  # 'private', 'public', 'global'
+
+class ScheduleEntryCreate(BaseModel):
+    day_of_week: int  # 0=Monday, 6=Sunday
+    time_start: str   # HH:MM format
+    time_end: str     # HH:MM format
+    subject: str
+    topic: Optional[str] = None
+    location: Optional[str] = None
+    notes: Optional[str] = None
+    color: str = '#3498db'
 
 class TestAnswer(BaseModel):
     test_id: int
@@ -336,7 +354,100 @@ async def clear_all_users():
         print(f"❌ Error clearing users: {e}")
         raise HTTPException(status_code=500, detail=f"Error clearing users: {str(e)}")
 
-# Schedule endpoints
+# New Schedule System Endpoints
+@app.post("/api/schedules")
+async def create_schedule(schedule: ScheduleCreate, user_id: int):
+    try:
+        # Determine creator type based on user role (simplified - you can enhance this)
+        creator_type = 'student'  # Default, can be enhanced with role checking
+        
+        schedule_id = await schedule_db.create_schedule(
+            title=schedule.title,
+            description=schedule.description,
+            creator_id=user_id,
+            creator_type=creator_type,
+            visibility=schedule.visibility
+        )
+        return {"message": "Schedule created successfully", "schedule_id": schedule_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/schedules/user/{user_id}")
+async def get_user_schedules(user_id: int):
+    try:
+        schedules = await schedule_db.get_user_schedules(user_id)
+        return {"schedules": schedules}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/schedules/public")
+async def get_public_schedules(user_id: int = None):
+    try:
+        schedules = await schedule_db.get_public_schedules(user_id)
+        return {"schedules": schedules}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/schedules/{schedule_id}")
+async def get_schedule_details(schedule_id: int):
+    try:
+        schedule = await schedule_db.get_schedule_by_id(schedule_id)
+        if not schedule:
+            raise HTTPException(status_code=404, detail="Schedule not found")
+        return schedule
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/schedules/{schedule_id}/entries")
+async def add_schedule_entry(schedule_id: int, entry: ScheduleEntryCreate):
+    try:
+        entry_id = await schedule_db.add_schedule_entry(
+            schedule_id=schedule_id,
+            day_of_week=entry.day_of_week,
+            time_start=entry.time_start,
+            time_end=entry.time_end,
+            subject=entry.subject,
+            topic=entry.topic,
+            location=entry.location,
+            notes=entry.notes,
+            color=entry.color
+        )
+        return {"message": "Schedule entry added successfully", "entry_id": entry_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/schedules/{schedule_id}/visibility")
+async def update_schedule_visibility(schedule_id: int, visibility: str):
+    try:
+        if visibility not in ['private', 'public', 'global']:
+            raise HTTPException(status_code=400, detail="Invalid visibility value")
+        
+        await schedule_db.update_schedule_visibility(schedule_id, visibility)
+        return {"message": "Schedule visibility updated successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/schedules/{schedule_id}")
+async def delete_schedule(schedule_id: int):
+    try:
+        await schedule_db.delete_schedule(schedule_id)
+        return {"message": "Schedule deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/schedule-entries/{entry_id}")
+async def delete_schedule_entry(entry_id: int):
+    try:
+        await schedule_db.delete_schedule_entry(entry_id)
+        return {"message": "Schedule entry deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Old Schedule endpoints (keeping for compatibility)
 @app.get("/api/schedule")
 async def get_schedule():
     try:

@@ -37,6 +37,38 @@ class Database:
                 )
             """)
             
+            # Schedules table
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS schedules (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    creator_id INTEGER NOT NULL,
+                    creator_type TEXT NOT NULL DEFAULT 'student',  -- 'student', 'teacher'
+                    visibility TEXT NOT NULL DEFAULT 'private',  -- 'private', 'public', 'global'
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (creator_id) REFERENCES users (telegram_id)
+                )
+            """)
+            
+            # Schedule entries table
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS schedule_entries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    schedule_id INTEGER NOT NULL,
+                    day_of_week INTEGER NOT NULL,  -- 0=Monday, 6=Sunday
+                    time_start TEXT NOT NULL,  -- HH:MM format
+                    time_end TEXT NOT NULL,    -- HH:MM format
+                    subject TEXT NOT NULL,
+                    topic TEXT,
+                    location TEXT,
+                    notes TEXT,
+                    color TEXT DEFAULT '#3498db',
+                    FOREIGN KEY (schedule_id) REFERENCES schedules (id) ON DELETE CASCADE
+                )
+            """)
+
             # Materials table (enhanced for teacher management)
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS materials (
@@ -97,7 +129,7 @@ class Database:
                 )
             """)
             
-            # Schedule table
+            # Schedule table (old - will be replaced by new schedule system)
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS schedule (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,

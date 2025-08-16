@@ -17,6 +17,7 @@ import MaterialsPage from './pages/MaterialsPage';
 import MaterialPage from './pages/MaterialPage';
 import MaterialManagement from './pages/teacher/MaterialManagement';
 import StudentList from './pages/teacher/StudentList';
+import ScheduleManager from './pages/ScheduleManager';
 import DirectorDashboard from './pages/DirectorDashboard';
 import ProfilePage from './pages/ProfilePage';
 import StudentManagementPage from './pages/StudentManagementPage';
@@ -153,6 +154,8 @@ function App() {
           return <StudentList />;
         case 'materials':
           return <MaterialManagement />;
+        case 'schedule':
+          return <ScheduleManager />;
         case 'material':
           return <MaterialPage materialId={materialId} navigateTo={navigateTo} />;
         case 'tests':
