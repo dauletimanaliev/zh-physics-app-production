@@ -1062,6 +1062,71 @@ async def update_material(material_id: int, update_data: Dict[str, Any]):
         print(f"📜 Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/api/materials-clear")
+async def clear_all_materials():
+    """Clear all materials from database and reset ID sequence"""
+    try:
+        print("🗑️ Clearing all materials from database and resetting ID sequence...")
+        await db.clear_all_materials()
+        print("✅ All materials cleared and ID sequence reset to 1")
+        return {"message": "All materials cleared and ID sequence reset successfully"}
+    except Exception as e:
+        print(f"❌ Error clearing materials: {e}")
+        raise HTTPException(status_code=500, detail=f"Error clearing materials: {str(e)}")
+
+@app.post("/api/materials-force-id")
+async def create_material_with_id(material_data: Dict[str, Any]):
+    """Create material with specific ID (for testing)"""
+    try:
+        force_id = material_data.get('force_id', 1)
+        print(f"🎯 Creating material with forced ID: {force_id}")
+        
+        # Delete existing material with this ID if exists
+        await db.execute('DELETE FROM materials WHERE id = ?', (force_id,))
+        
+        # Process material data
+        tags = material_data.get('tags', [])
+        if isinstance(tags, list):
+            tags_json = json.dumps(tags)
+        else:
+            tags_json = str(tags) if tags else json.dumps([])
+        
+        attachments = material_data.get('attachments', [])
+        attachments_json = json.dumps(attachments) if attachments else json.dumps([])
+        
+        # Insert with specific ID
+        await db.execute('''
+            INSERT INTO materials (id, title, description, content, type, category, difficulty, duration, 
+                                 is_published, tags, video_url, pdf_url, thumbnail_url, teacher_id, attachments)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            force_id,
+            material_data.get('title', 'Untitled'),
+            material_data.get('description', ''),
+            material_data.get('content', ''),
+            material_data.get('type', 'text'),
+            material_data.get('category', 'mechanics'),
+            material_data.get('difficulty', 'easy'),
+            material_data.get('duration', 10),
+            material_data.get('isPublished', 1),
+            tags_json,
+            material_data.get('video_url', ''),
+            material_data.get('pdf_url', ''),
+            material_data.get('thumbnail_url', ''),
+            1,  # teacher_id
+            attachments_json
+        ))
+        
+        # Update sequence to continue from this ID
+        await db.execute(f'UPDATE sqlite_sequence SET seq = {force_id} WHERE name = "materials"')
+        
+        print(f"✅ Material created with ID {force_id} and sequence updated")
+        return {"message": "Material created with forced ID", "material_id": force_id}
+        
+    except Exception as e:
+        print(f"❌ Error creating material with forced ID: {e}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
 @app.delete("/api/materials/{material_id}")
 async def delete_material(material_id: int):
     """Delete a material"""
