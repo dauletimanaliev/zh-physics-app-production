@@ -84,9 +84,12 @@ const AdminPanel = () => {
       const allUsers = await apiClient.getAllUsers();
       console.log('📊 All users loaded:', allUsers);
       
-      // Ensure allUsers is an array
-      const usersArray = Array.isArray(allUsers) ? allUsers : [];
-      const studentUsers = usersArray.filter(user => user.role === 'student' || !user.role);
+      // Ensure allUsers is an array and extract users from response
+      const usersData = allUsers.users || allUsers;
+      const usersArray = Array.isArray(usersData) ? usersData : [];
+      const studentUsers = usersArray.filter(user => 
+        !user.role || user.role === 'student' || user.role === undefined
+      );
       
       console.log('👥 Student users filtered:', studentUsers);
       
@@ -682,83 +685,334 @@ const AdminPanel = () => {
     );
   }
 
+const styles = {
+  container: {
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    color: 'white',
+    padding: '20px'
+  },
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    gap: '20px'
+  },
+  loadingSpinner: {
+    width: '50px',
+    height: '50px',
+    border: '4px solid rgba(255, 255, 255, 0.3)',
+    borderTop: '4px solid white',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  },
+  loadingText: {
+    fontSize: '18px',
+    fontWeight: '500'
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '25px 30px',
+    background: 'rgba(255, 255, 255, 0.15)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '20px',
+    marginBottom: '30px',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+  },
+  headerLeft: {
+    display: 'flex',
+    alignItems: 'center'
+  },
+  logoContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px'
+  },
+  logo: {
+    fontSize: '40px',
+    background: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: '12px',
+    padding: '10px',
+    backdropFilter: 'blur(10px)'
+  },
+  title: {
+    fontSize: '28px',
+    fontWeight: '700',
+    margin: '0',
+    textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+    background: 'linear-gradient(45deg, #fff, #e0e7ff)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent'
+  },
+  subtitle: {
+    fontSize: '14px',
+    margin: '4px 0 0 0',
+    opacity: 0.8
+  },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px'
+  },
+  notificationBadge: {
+    position: 'relative',
+    padding: '10px',
+    background: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease'
+  },
+  notificationIcon: {
+    fontSize: '20px'
+  },
+  notificationCount: {
+    position: 'absolute',
+    top: '-5px',
+    right: '-5px',
+    background: '#ef4444',
+    color: 'white',
+    borderRadius: '50%',
+    width: '20px',
+    height: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: 'bold'
+  },
+  userProfile: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '8px 16px',
+    background: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: '16px',
+    border: '1px solid rgba(255, 255, 255, 0.2)'
+  },
+  userAvatar: {
+    width: '45px',
+    height: '45px',
+    borderRadius: '50%',
+    background: 'linear-gradient(45deg, #8b5cf6, #06b6d4)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: '600',
+    fontSize: '16px',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+  },
+  userInfo: {
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  userName: {
+    fontWeight: '600',
+    fontSize: '14px'
+  },
+  userRole: {
+    fontSize: '12px',
+    opacity: 0.7
+  },
+  navigationGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: '20px',
+    marginBottom: '30px'
+  },
+  navCard: {
+    background: 'rgba(255, 255, 255, 0.1)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '20px',
+    padding: '25px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    position: 'relative',
+    overflow: 'hidden'
+  },
+  navCardActive: {
+    background: 'rgba(255, 255, 255, 0.2)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.2)'
+  },
+  navCardIcon: {
+    fontSize: '32px',
+    marginBottom: '15px',
+    display: 'block'
+  },
+  navCardContent: {
+    position: 'relative',
+    zIndex: 2
+  },
+  navCardTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    margin: '0 0 8px 0'
+  },
+  navCardDescription: {
+    fontSize: '14px',
+    opacity: 0.8,
+    margin: 0,
+    lineHeight: 1.4
+  },
+  activeIndicator: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: '4px',
+    height: '100%',
+    background: 'linear-gradient(to bottom, #22c55e, #16a34a)',
+    borderRadius: '0 20px 20px 0'
+  },
+  quickActionsPanel: {
+    background: 'rgba(59, 130, 246, 0.15)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '20px',
+    padding: '25px 30px',
+    marginBottom: '30px',
+    border: '1px solid rgba(59, 130, 246, 0.3)',
+    boxShadow: '0 8px 32px rgba(59, 130, 246, 0.1)'
+  },
+  panelTitle: {
+    fontSize: '20px',
+    fontWeight: '600',
+    margin: '0 0 20px 0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  quickActions: {
+    display: 'flex',
+    gap: '15px',
+    flexWrap: 'wrap'
+  },
+  quickActionBtn: {
+    background: 'linear-gradient(45deg, #8b5cf6, #06b6d4)',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '12px 24px',
+    color: 'white',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+  },
+  quickActionBtnSecondary: {
+    background: 'rgba(236, 72, 153, 0.2)',
+    border: '1px solid rgba(236, 72, 153, 0.3)',
+    borderRadius: '12px',
+    padding: '12px 24px',
+    color: 'white',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    backdropFilter: 'blur(10px)'
+  },
+  contentArea: {
+    background: 'rgba(255, 255, 255, 0.05)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '20px',
+    padding: '30px',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    minHeight: '400px'
+  }
+};
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      display: 'flex',
-      flexDirection: 'column',
-      color: 'white'
-    }}>
+    <div style={styles.container}>
       {loading ? (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          color: 'white',
-          fontSize: '18px'
-        }}>
-          <div>Загрузка данных...</div>
+        <div style={styles.loadingContainer}>
+          <div style={styles.loadingSpinner}></div>
+          <div style={styles.loadingText}>Загрузка панели управления...</div>
         </div>
       ) : (
         <>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '20px 30px',
-            background: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.2)'
-          }}>
-            <h1 style={{
-              color: 'white',
-              fontSize: '28px',
-              fontWeight: '700',
-              margin: '0',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-            }}>Административная панель</h1>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: '600',
-                color: 'white'
-              }}>
-                {user?.name?.split(' ').map(n => n[0]).join('') || 'A'}
+          {/* Modern Header */}
+          <div style={styles.header}>
+            <div style={styles.headerLeft}>
+              <div style={styles.logoContainer}>
+                <div style={styles.logo}>🎓</div>
+                <div>
+                  <h1 style={styles.title}>Административная панель</h1>
+                  <p style={styles.subtitle}>Система управления образованием</p>
+                </div>
               </div>
-              <span style={{
-                color: 'rgba(255, 255, 255, 0.9)',
-                fontSize: '14px'
-              }}>Директор/Учитель</span>
+            </div>
+            <div style={styles.headerRight}>
+              <div style={styles.notificationBadge}>
+                <span style={styles.notificationIcon}>🔔</span>
+                <span style={styles.notificationCount}>3</span>
+              </div>
+              <div style={styles.userProfile}>
+                <div style={styles.userAvatar}>
+                  {user?.name?.split(' ').map(n => n[0]).join('') || 'A'}
+                </div>
+                <div style={styles.userInfo}>
+                  <span style={styles.userName}>{user?.name || 'Администратор'}</span>
+                  <span style={styles.userRole}>Директор/Учитель</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="admin-tabs">
+          {/* Navigation Cards */}
+          <div style={styles.navigationGrid}>
             {tabs.map(tab => (
-              <button
+              <div
                 key={tab.id}
-                className={`admin-tab ${activeTab === tab.id ? 'active' : ''}`}
+                style={{
+                  ...styles.navCard,
+                  ...(activeTab === tab.id ? styles.navCardActive : {})
+                }}
                 onClick={() => setActiveTab(tab.id)}
               >
-                <span className="tab-icon">{tab.icon}</span>
-                <span className="tab-label">{tab.label}</span>
-              </button>
+                <div style={styles.navCardIcon}>{tab.icon}</div>
+                <div style={styles.navCardContent}>
+                  <h3 style={styles.navCardTitle}>{tab.label.replace(/^\S+\s/, '')}</h3>
+                  <p style={styles.navCardDescription}>
+                    {tab.id === 'dashboard' && 'Обзор системы'}
+                    {tab.id === 'students' && 'Управление учениками'}
+                    {tab.id === 'messages' && 'Отправка уведомлений'}
+                    {tab.id === 'materials' && 'Создание контента'}
+                    {tab.id === 'schedule' && 'Планирование занятий'}
+                    {tab.id === 'analytics' && 'Отчеты и статистика'}
+                  </p>
+                </div>
+                {activeTab === tab.id && <div style={styles.activeIndicator}></div>}
+              </div>
             ))}
           </div>
 
-          <div className="admin-content">
+          {/* Quick Actions Panel */}
+          <div style={styles.quickActionsPanel}>
+            <h2 style={styles.panelTitle}>📊 Панель управления</h2>
+            <div style={styles.quickActions}>
+              <button 
+                style={styles.quickActionBtn}
+                onClick={() => setActiveTab('materials')}
+              >
+                📚 Создать материал
+              </button>
+              <button 
+                style={styles.quickActionBtnSecondary}
+                onClick={() => setActiveTab('messages')}
+              >
+                💬 Отправить уведомление
+              </button>
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div style={styles.contentArea}>
             {renderTabContent()}
           </div>
         </>

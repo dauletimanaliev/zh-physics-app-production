@@ -221,34 +221,40 @@ const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* Progress Overview */}
-      {progress && (
-        <div className="progress-overview">
-          <h2>Твой прогресс</h2>
-          <div className="subject-progress">
-            {progress.progress?.map((subject, index) => (
-              <div key={index} className="subject-card">
-                <div className="subject-header">
-                  <h3>{subject.subject}</h3>
-                  <span className="completion-rate">
-                    {Math.round(subject.avg_progress || 0)}%
-                  </span>
-                </div>
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill"
-                    style={{ width: `${subject.avg_progress || 0}%` }}
-                  ></div>
-                </div>
-                <div className="subject-stats">
-                  <span>{subject.completed_materials}/{subject.total_materials} материалов</span>
-                  <span>{Math.round((subject.total_time || 0) / 60)} мин</span>
-                </div>
-              </div>
-            ))}
+      {/* Progress Overview - Real data only */}
+      <div className="progress-overview">
+        <h2>Твой прогресс</h2>
+        <div className="stats-grid">
+          <div className="stat-item">
+            <div className="stat-icon">📊</div>
+            <div className="stat-content">
+              <span className="stat-number">{progress.totalTests}</span>
+              <span className="stat-label">Тестов пройдено</span>
+            </div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-icon">⭐</div>
+            <div className="stat-content">
+              <span className="stat-number">{progress.averageScore}%</span>
+              <span className="stat-label">Средний балл</span>
+            </div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-icon">⏱️</div>
+            <div className="stat-content">
+              <span className="stat-number">{progress.studyTime}ч</span>
+              <span className="stat-label">Время изучения</span>
+            </div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-icon">🏆</div>
+            <div className="stat-content">
+              <span className="stat-number">#{progress.rank || 'N/A'}</span>
+              <span className="stat-label">Место в рейтинге</span>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Recent Achievements */}
       {achievements.length > 0 && (

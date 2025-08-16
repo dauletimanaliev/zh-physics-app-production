@@ -204,9 +204,13 @@ async def create_user(user: User):
             telegram_id=user.telegram_id,
             username=user.username,
             first_name=user.first_name,
-            language=user.language
+            last_name=getattr(user, 'last_name', None),
+            birth_date=getattr(user, 'birth_date', None),
+            language=user.language,
+            role=getattr(user, 'role', 'student'),
+            registration_date=getattr(user, 'registration_date', None)
         )
-        return {"message": "User created successfully"}
+        return {"message": "User created successfully", "id": user.telegram_id}
     except Exception as e:
         print(f"❌ User creation error: {e}")
         print(f"📜 Traceback: {traceback.format_exc()}")
@@ -311,6 +315,26 @@ async def get_materials_by_subject(subject: str, language: str = 'ru'):
         return {"materials": materials}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Admin clear users endpoint
+@app.post("/admin/clear-users")
+async def clear_all_users():
+    try:
+        print("🗑️ Clearing all users from database...")
+        
+        # Get current count
+        users = await db.get_all_users()
+        count = len(users)
+        print(f"📊 Found {count} users to delete")
+        
+        # Clear all users
+        await db.execute_query("DELETE FROM users")
+        
+        print(f"✅ Successfully deleted {count} users")
+        return {"message": f"Successfully cleared {count} users", "deleted_count": count}
+    except Exception as e:
+        print(f"❌ Error clearing users: {e}")
+        raise HTTPException(status_code=500, detail=f"Error clearing users: {str(e)}")
 
 # Schedule endpoints
 @app.get("/api/schedule")
@@ -1163,14 +1187,20 @@ async def get_materials_for_student(category: Optional[str] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/materials/{material_id}")
-async def get_material(material_id: int):
-    """Get a specific material by ID"""
+async def get_material(material_id: int, user_id: int = None):
+    """Get a specific material by ID and track view"""
     try:
         print(f"📖 Loading material {material_id}...")
         material = await db.get_material_by_id(material_id)
         if not material:
             print(f"❌ Material {material_id} not found in database")
             raise HTTPException(status_code=404, detail="Material not found")
+        
+        # Track view if user_id provided
+        if user_id:
+            await db.track_material_view(material_id, user_id)
+            print(f"👁️ View tracked for user {user_id} on material {material_id}")
+        
         print(f"✅ Material {material_id} loaded successfully: {material.get('title', 'No title')}")
         return material
     except HTTPException:

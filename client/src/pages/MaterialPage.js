@@ -29,8 +29,19 @@ const MaterialPage = ({ materialId, navigateTo }) => {
           ? 'https://web-production-2678c.up.railway.app/api'
           : 'http://localhost:8000/api');
       
+      // Get user ID for view tracking
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = userData.telegram_id || userData.id;
+      
+      // Build URL with user_id parameter for view tracking
+      const url = userId 
+        ? `${apiUrl}/materials/${materialId}?user_id=${userId}`
+        : `${apiUrl}/materials/${materialId}`;
+      
+      console.log('📖 Fetching material with view tracking:', url);
+      
       // Try to get specific material first
-      let response = await fetch(`${apiUrl}/materials/${materialId}`);
+      let response = await fetch(url);
       
       if (response.ok) {
         const data = await response.json();
@@ -40,6 +51,7 @@ const MaterialPage = ({ materialId, navigateTo }) => {
         if (data.id) {
           // Direct material object from /api/materials/{id}
           setMaterial(data);
+          console.log('👁️ Material view tracked for user:', userId);
           return;
         }
         

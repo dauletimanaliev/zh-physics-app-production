@@ -58,6 +58,7 @@ class ApiClient {
 
   // User methods
   async createUser(userData) {
+    console.log('👤 Creating user with data:', userData);
     return this.request('/users', {
       method: 'POST',
       body: JSON.stringify(userData),
@@ -70,13 +71,6 @@ class ApiClient {
 
   async getUserProgress(userId) {
     return this.request(`/users/${userId}/progress`);
-  }
-
-  async createUser(userData) {
-    return this.request('/users', {
-      method: 'POST',
-      body: JSON.stringify(userData)
-    });
   }
 
   async getLeaderboard(limit = 10) {

@@ -16,6 +16,7 @@ import TestsPage from './pages/TestsPage';
 import MaterialsPage from './pages/MaterialsPage';
 import MaterialPage from './pages/MaterialPage';
 import MaterialManagement from './pages/teacher/MaterialManagement';
+import StudentList from './pages/teacher/StudentList';
 import DirectorDashboard from './pages/DirectorDashboard';
 import ProfilePage from './pages/ProfilePage';
 import StudentManagementPage from './pages/StudentManagementPage';
@@ -92,10 +93,14 @@ function App() {
       // ✅ Save user in API database
       try {
         await apiClient.createUser({
-          telegram_id: userData.id,
+          telegram_id: userData.telegram_id || userData.id,
           username: userData.username || null,
           first_name: userData.firstName,
-          language: userData.language || 'ru'
+          last_name: userData.lastName,
+          birth_date: userData.birthDate ? userData.birthDate.toISOString().split('T')[0] : null,
+          language: userData.language || 'ru',
+          role: userData.role,
+          registration_date: userData.registrationTime
         });
         console.log('✅ User saved to API database');
       } catch (error) {
@@ -145,7 +150,7 @@ function App() {
         case 'admin':
           return <AdminPanel />;
         case 'students':
-          return <StudentManagementPage />;
+          return <StudentList />;
         case 'materials':
           return <MaterialManagement />;
         case 'material':

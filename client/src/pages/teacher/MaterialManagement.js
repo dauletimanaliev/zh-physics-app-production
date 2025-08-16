@@ -150,9 +150,20 @@ const MaterialManagement = () => {
       const teacherId = '111333'; // Real teacher ID from backend sample data
       console.log('🔑 TeacherId resolved to:', teacherId);
       
-      // Process attached files
+      // Process attached files - handle both new and existing files
       const processedFiles = await Promise.all(
         attachedFiles.map(async (fileData) => {
+          // If it's an existing file, return as-is
+          if (fileData.isExisting) {
+            return {
+              name: fileData.name,
+              size: fileData.size,
+              type: fileData.type,
+              data: fileData.data
+            };
+          }
+          
+          // If it's a new file, process it
           return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = () => {
@@ -232,26 +243,78 @@ const MaterialManagement = () => {
     }
   };
 
-  const handleEditMaterial = (material) => {
-
+  const handleEditMaterial = async (material) => {
     console.log('🔧 Edit button clicked for material:', material);
-    setEditingMaterial(material);
-    console.log('✏️ EditingMaterial set to:', material);
-    setMaterialForm({
-      title: material.title,
-      description: material.description,
-      content: material.content || '',
-      type: material.type,
-      category: material.category,
-      difficulty: material.difficulty,
-      duration: material.duration,
-      isPublished: material.isPublished,
-      tags: material.tags ? (Array.isArray(material.tags) ? material.tags.join(', ') : material.tags) : '',
-      videoUrl: material.videoUrl || '',
-      pdfUrl: material.pdfUrl || '',
-      thumbnailUrl: material.thumbnailUrl || ''
-    });
-    setShowCreateModal(true);
+    
+    // Load full material data including attachments
+    try {
+      const fullMaterial = await apiClient.getMaterial(material.id);
+      console.log('📄 Full material data loaded:', fullMaterial);
+      
+      setEditingMaterial(fullMaterial);
+      console.log('✏️ EditingMaterial set to:', fullMaterial);
+      
+      setMaterialForm({
+        title: fullMaterial.title,
+        description: fullMaterial.description,
+        content: fullMaterial.content || '',
+        type: fullMaterial.type,
+        category: fullMaterial.category,
+        difficulty: fullMaterial.difficulty,
+        duration: fullMaterial.duration,
+        isPublished: fullMaterial.isPublished,
+        tags: fullMaterial.tags ? (Array.isArray(fullMaterial.tags) ? fullMaterial.tags.join(', ') : fullMaterial.tags) : '',
+        videoUrl: fullMaterial.videoUrl || '',
+        pdfUrl: fullMaterial.pdfUrl || '',
+        thumbnailUrl: fullMaterial.thumbnailUrl || ''
+      });
+      
+      // Load existing attachments
+      let existingAttachments = [];
+      if (fullMaterial.attachments) {
+        try {
+          const attachmentsData = typeof fullMaterial.attachments === 'string' 
+            ? JSON.parse(fullMaterial.attachments) 
+            : fullMaterial.attachments;
+          
+          if (Array.isArray(attachmentsData)) {
+            existingAttachments = attachmentsData.map(att => ({
+              name: att.name,
+              type: att.type,
+              size: att.size || 0,
+              data: att.data,
+              isExisting: true // Mark as existing file
+            }));
+            console.log('📎 Loaded existing attachments:', existingAttachments.length);
+          }
+        } catch (e) {
+          console.warn('⚠️ Error parsing attachments:', e);
+        }
+      }
+      
+      setAttachedFiles(existingAttachments);
+      setShowCreateModal(true);
+    } catch (error) {
+      console.error('❌ Error loading material for edit:', error);
+      // Fallback to basic data
+      setEditingMaterial(material);
+      setMaterialForm({
+        title: material.title,
+        description: material.description,
+        content: material.content || '',
+        type: material.type,
+        category: material.category,
+        difficulty: material.difficulty,
+        duration: material.duration,
+        isPublished: material.isPublished,
+        tags: material.tags ? (Array.isArray(material.tags) ? material.tags.join(', ') : material.tags) : '',
+        videoUrl: material.videoUrl || '',
+        pdfUrl: material.pdfUrl || '',
+        thumbnailUrl: material.thumbnailUrl || ''
+      });
+      setAttachedFiles([]);
+      setShowCreateModal(true);
+    }
   };
 
   const handleDeleteMaterial = (material) => {
@@ -883,7 +946,7 @@ const MaterialManagement = () => {
               <label style={pageStyles.label}>Прикрепленные файлы</label>
               <FileUploader 
                 onFilesSelected={setAttachedFiles}
-                maxFiles={5}
+                maxFiles={15}
                 maxSize={10 * 1024 * 1024} // 10MB
               />
             </div>
