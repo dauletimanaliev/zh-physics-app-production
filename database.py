@@ -351,6 +351,16 @@ class Database:
                     materials.append(material)
                 return materials
 
+    async def clear_all_materials(self):
+        """Clear all materials from database and reset auto-increment sequence"""
+        async with aiosqlite.connect(self.db_path) as db:
+            # Delete all materials
+            await db.execute("DELETE FROM materials")
+            # Reset auto-increment sequence
+            await db.execute("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'materials'")
+            await db.commit()
+            print("✅ All materials cleared and sequence reset")
+
     async def create_material(self, title: str, description: str, content: str, 
                             type: str, category: str, difficulty: str, duration: int,
                             is_published: bool, tags: str, video_url: str = None,
@@ -514,6 +524,16 @@ class Database:
                     materials.append(material)
                 return materials
 
+    async def clear_all_materials(self):
+        """Clear all materials from database and reset auto-increment sequence"""
+        async with aiosqlite.connect(self.db_path) as db:
+            # Delete all materials
+            await db.execute("DELETE FROM materials")
+            # Reset auto-increment sequence
+            await db.execute("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'materials'")
+            await db.commit()
+            print("✅ All materials cleared and sequence reset")
+
     async def get_published_materials(self, category: str = None) -> List[Dict]:
         """Get all published materials, optionally filtered by category"""
         async with aiosqlite.connect(self.db_path) as db:
@@ -550,3 +570,13 @@ class Database:
                         material['tags'] = []
                     materials.append(material)
                 return materials
+
+    async def clear_all_materials(self):
+        """Clear all materials from database and reset auto-increment sequence"""
+        async with aiosqlite.connect(self.db_path) as db:
+            # Delete all materials
+            await db.execute("DELETE FROM materials")
+            # Reset auto-increment sequence
+            await db.execute("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'materials'")
+            await db.commit()
+            print("✅ All materials cleared and sequence reset")
