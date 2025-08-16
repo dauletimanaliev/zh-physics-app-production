@@ -147,6 +147,18 @@ async def get_material(material_id: int):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error loading material: {str(e)}")
 
+@app.delete("/api/materials-clear")
+async def clear_all_materials():
+    """Clear all materials from database and reset ID sequence"""
+    try:
+        print("🗑️ Clearing all materials from database and resetting ID sequence...")
+        await db.clear_all_materials()
+        print("✅ All materials cleared and ID sequence reset to 1")
+        return {"message": "All materials cleared and ID sequence reset successfully"}
+    except Exception as e:
+        print(f"❌ Error clearing materials: {e}")
+        raise HTTPException(status_code=500, detail=f"Error clearing materials: {str(e)}")
+
 @app.post("/api/materials")
 async def create_material(material_data: Dict[str, Any]):
     """Create new material"""

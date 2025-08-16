@@ -1,21 +1,8 @@
 [build]
   publish = "build"
-  command = "npm run build"
-
-[build.environment]
-  NODE_VERSION = "18"
-  NPM_VERSION = "9"
+  command = "npm install && npm run build"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[context.production.environment]
-  REACT_APP_API_URL = ""
-
-[context.deploy-preview.environment]
-  REACT_APP_API_URL = ""
-
-[context.branch-deploy.environment]
-  REACT_APP_API_URL = ""

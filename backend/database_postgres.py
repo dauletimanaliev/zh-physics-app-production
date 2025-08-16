@@ -300,3 +300,11 @@ class PostgresDatabase:
             )
             
             return user_id
+
+    async def clear_all_materials(self):
+        """Clear all materials from database"""
+        async with self.pool.acquire() as conn:
+            await conn.execute('DELETE FROM materials')
+            # Reset auto-increment sequence to start from 1
+            await conn.execute('ALTER SEQUENCE materials_id_seq RESTART WITH 1')
+            return True

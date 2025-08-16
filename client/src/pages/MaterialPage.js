@@ -31,53 +31,59 @@ const MaterialPage = ({ materialId, navigateTo }) => {
       
       // Try to get specific material first
       let response = await fetch(`${apiUrl}/materials/${materialId}`);
-      let data;
       
       if (response.ok) {
-        data = await response.json();
+        const data = await response.json();
         console.log('Material data loaded:', data);
         
-        // Handle different response formats
-        if (data.materials && Array.isArray(data.materials)) {
-          // If API returns {materials: []} format, try alternative approach
-          if (data.materials.length === 0) {
-            console.log('Material not found via direct API, trying alternative approach...');
-            // Fallback: get all materials and find the one we need
-            response = await fetch(`${apiUrl}/materials`);
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            data = await response.json();
-            const materials = data.materials || [];
-            const foundMaterial = materials.find(m => m.id == materialId);
-            if (!foundMaterial) {
-              throw new Error('Material not found');
-            }
-            setMaterial(foundMaterial);
-            return;
-          }
-          setMaterial(data.materials[0]);
-        } else if (data.id) {
-          // Direct material object
+        // Check if we got a direct material object
+        if (data.id) {
+          // Direct material object from /api/materials/{id}
           setMaterial(data);
-        } else {
-          throw new Error('Invalid response format');
+          return;
         }
+        
+        // If direct API returns empty or wrong format, try getting all materials
+        console.log('Direct API did not return material, trying to get all materials...');
       } else {
-        // If direct API fails, try getting all materials
-        console.log('Direct material API failed, trying alternative approach...');
-        response = await fetch(`${apiUrl}/materials`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        data = await response.json();
-        const materials = data.materials || [];
-        const foundMaterial = materials.find(m => m.id == materialId);
-        if (!foundMaterial) {
-          throw new Error('Material not found');
-        }
-        setMaterial(foundMaterial);
+        console.log('Direct API failed with status:', response.status);
       }
+      
+      // Fallback: get all materials and find the one we need
+      console.log('Fetching all materials to find the requested one...');
+      response = await fetch(`${apiUrl}/materials`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const allData = await response.json();
+      const materials = allData.materials || [];
+      console.log('All materials:', materials.map(m => ({id: m.id, title: m.title})));
+      console.log('Looking for materialId:', materialId, 'type:', typeof materialId);
+      
+      const foundMaterial = materials.find(m => {
+        console.log('Checking material:', m.id, 'type:', typeof m.id, 'matches:', m.id == materialId);
+        return m.id == materialId;
+      });
+      
+      console.log('Found material:', foundMaterial);
+      if (!foundMaterial) {
+        console.log('Available materials:', materials.map(m => `ID: ${m.id}, Title: ${m.title}`));
+        // If material not found but others exist, redirect to first available
+        if (materials.length > 0) {
+          console.log('Redirecting to first available material:', materials[0].id);
+          window.history.replaceState(null, '', `?material=${materials[0].id}`);
+          setMaterial(materials[0]);
+          return;
+        }
+        // If no materials exist at all, show error message
+        console.log('No materials found in database');
+        setError('В базе данных нет материалов');
+        setLoading(false);
+        return;
+      }
+      
+      setMaterial(foundMaterial);
     } catch (error) {
       console.error('Error fetching material:', error);
       setError('Ошибка загрузки материала: ' + error.message);

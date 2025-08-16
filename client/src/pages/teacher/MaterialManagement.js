@@ -280,13 +280,44 @@ const MaterialManagement = () => {
     setMaterialToDelete(null);
   };
 
-  const handleViewMaterial = (material) => {
-    // Navigate to material page instead of opening modal
-    if (window.navigateTo) {
-      window.navigateTo('material', { materialId: material.id });
-    } else {
-      console.error('Navigation function not available');
+  const handleViewMaterial = (event, material) => {
+    console.log('🔍 Button clicked for material:', material.id, material.title);
+    
+    // Aggressively prevent any default behavior
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      // stopImmediatePropagation doesn't exist in React SyntheticEvent
     }
+    
+    // Prevent any form submission
+    const form = event?.target?.closest('form');
+    if (form) {
+      console.log('⚠️ Found parent form, preventing submission');
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    }
+    
+    console.log('Available window functions:', Object.keys(window).filter(key => key.includes('navigat')));
+    
+    // Try direct navigation first
+    if (typeof window.navigateTo === 'function') {
+      console.log('✅ Calling window.navigateTo directly');
+      try {
+        window.navigateTo('material', { materialId: material.id });
+        console.log('✅ Navigation call completed');
+        return false; // Prevent any further processing
+      } catch (error) {
+        console.error('❌ Error in navigation:', error);
+      }
+    } else {
+      console.log('❌ window.navigateTo not available or not a function');
+      console.log('window.navigateTo type:', typeof window.navigateTo);
+    }
+    
+    return false;
   };
 
 
@@ -701,12 +732,21 @@ const MaterialManagement = () => {
                     {material.isPublished ? '📤 Снять с публикации' : '📢 Опубликовать'}
                   </button>
                   
-                  <button
-                    style={{...pageStyles.actionButton, ...pageStyles.viewButton}}
-                    onClick={() => handleViewMaterial(material)}
+                  <div
+                    style={{
+                      ...pageStyles.actionButton, 
+                      ...pageStyles.viewButton,
+                      cursor: 'pointer',
+                      userSelect: 'none'
+                    }}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleViewMaterial(event, material);
+                    }}
                   >
                     👁️ Просмотреть
-                  </button>
+                  </div>
                   
                   <button
                     style={{...pageStyles.actionButton, ...pageStyles.editButton}}
