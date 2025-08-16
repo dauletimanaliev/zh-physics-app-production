@@ -304,7 +304,7 @@ async def submit_test_answer(answer: TestAnswer):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Materials endpoints
-@app.get("/api/materials/{subject}")
+@app.get("/api/materials/by-subject/{subject}")
 async def get_materials_by_subject(subject: str, language: str = 'ru'):
     try:
         materials = await db.get_materials_by_subject(subject, language)
