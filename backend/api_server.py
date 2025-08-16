@@ -159,6 +159,62 @@ async def clear_all_materials():
         print(f"❌ Error clearing materials: {e}")
         raise HTTPException(status_code=500, detail=f"Error clearing materials: {str(e)}")
 
+@app.post("/api/materials-force-id")
+async def create_material_with_id(material_data: Dict[str, Any]):
+    """Create material with specific ID (for testing)"""
+    try:
+        force_id = material_data.get('force_id', 1)
+        print(f"🎯 Creating material with forced ID: {force_id}")
+        
+        # Delete existing material with this ID if exists
+        await db.pool.execute('DELETE FROM materials WHERE id = $1', force_id)
+        
+        # Process material data
+        tags = material_data.get('tags', [])
+        if isinstance(tags, list):
+            tags_json = json.dumps(tags)
+        else:
+            tags_json = str(tags) if tags else json.dumps([])
+        
+        attachments = material_data.get('attachments', [])
+        attachments_json = json.dumps(attachments) if attachments else json.dumps([])
+        
+        # Insert with specific ID
+        query = """
+        INSERT INTO materials (id, title, description, content, type, category, difficulty, duration, 
+                             is_published, tags, video_url, pdf_url, thumbnail_url, teacher_id, attachments)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        """
+        
+        await db.pool.execute(
+            query,
+            force_id,
+            material_data.get('title', 'Untitled'),
+            material_data.get('description', ''),
+            material_data.get('content', ''),
+            material_data.get('type', 'text'),
+            material_data.get('category', 'mechanics'),
+            material_data.get('difficulty', 'easy'),
+            material_data.get('duration', 10),
+            material_data.get('isPublished', 1),
+            tags_json,
+            material_data.get('video_url', ''),
+            material_data.get('pdf_url', ''),
+            material_data.get('thumbnail_url', ''),
+            1,  # teacher_id
+            attachments_json
+        )
+        
+        # Update sequence to continue from this ID
+        await db.pool.execute(f'ALTER SEQUENCE materials_id_seq RESTART WITH {force_id + 1}')
+        
+        print(f"✅ Material created with ID {force_id} and sequence updated")
+        return {"message": "Material created with forced ID", "material_id": force_id}
+        
+    except Exception as e:
+        print(f"❌ Error creating material with forced ID: {e}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
 @app.post("/api/materials")
 async def create_material(material_data: Dict[str, Any]):
     """Create new material"""

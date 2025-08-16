@@ -6,8 +6,8 @@ import os
 async def reset_materials_sequence():
     """Reset materials ID sequence to start from 1"""
     try:
-        # Railway PostgreSQL connection string
-        DATABASE_URL = "postgresql://postgres:bBFCaGDdEEeB-cCBgBGCEGdBbBCgbdgF@postgres.railway.internal:5432/railway"
+        # Railway PostgreSQL connection string (external)
+        DATABASE_URL = "postgresql://postgres:bBFCaGDdEEeB-cCBgBGCEGdBbBCgbdgF@roundhouse.proxy.rlwy.net:58062/railway"
         
         print("🔗 Connecting to Railway PostgreSQL...")
         conn = await asyncpg.connect(DATABASE_URL)
