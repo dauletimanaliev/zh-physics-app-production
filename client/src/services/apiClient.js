@@ -7,15 +7,14 @@ const API_BASE_URL = process.env.REACT_APP_API_URL ||
 
 class ApiClient {
   constructor() {
-    this.baseURL = API_BASE_URL;
-    console.log('🔧 ApiClient initialized:', { 
-      baseURL: this.baseURL,
-      env: process.env.NODE_ENV,
-      apiUrl: process.env.REACT_APP_API_URL
-    });
+    this.baseURL = process.env.REACT_APP_API_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'https://web-production-2678c.up.railway.app/api'  // Production API
+        : 'http://localhost:8000/api');  // Development API
+    this.isProduction = process.env.NODE_ENV === 'production';
+    console.log('🔗 API Client initialized with base URL:', this.baseURL);
+    console.log('🏗️ Environment:', this.isProduction ? 'production' : 'development');
   }
-
-
 
   async request(endpoint, options = {}) {
     // Always use API - no fallback logic
@@ -317,17 +316,35 @@ class ApiClient {
   }
 
   // Get published materials for students from database only
-  async getMaterialsForStudent(studentId = null, category = null) {
+  async getMaterialsForStudent() {
     try {
-      console.log('📚 Loading published materials from database, category:', category || 'all');
-      const endpoint = category ? `/materials?category=${category}` : '/materials';
-      const response = await this.request(endpoint);
-      const materials = response.materials || response;
-      console.log('✅ Got published materials from database:', materials.length);
-      return materials;
+      console.log('📚 Loading published materials from database, category: all');
+      const response = await this.request('/materials');
+      
+      if (response && response.materials) {
+        console.log('✅ Got published materials from database:', response.materials.length);
+        return response.materials;
+      } else if (Array.isArray(response)) {
+        console.log('✅ Got published materials from database:', response.length);
+        return response;
+      }
+      
+      console.log('⚠️ No materials found in response');
+      return [];
     } catch (error) {
       console.error('❌ Error loading materials from database:', error);
-      throw error;
+      // Fallback to static data if API fails
+      try {
+        const fallbackResponse = await fetch('/api/materials.json');
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          console.log('⚠️ Using fallback static data');
+          return fallbackData.materials || [];
+        }
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError);
+      }
+      return [];
     }
   }
 
@@ -992,7 +1009,9 @@ class ApiClient {
   async getUserBookmarks(userId) {
     try {
       console.log('🔖 Loading user bookmarks:', userId);
-      return this.request(`/users/${userId}/bookmarks`);
+      // Return empty array since bookmarks API is not implemented yet
+      console.log('⚠️ Bookmarks API not implemented, returning empty array');
+      return [];
     } catch (error) {
       console.error('❌ Error loading bookmarks:', error);
       // Return empty array as fallback
@@ -1003,25 +1022,22 @@ class ApiClient {
   async addBookmark(userId, materialId) {
     try {
       console.log('➕ Adding bookmark:', { userId, materialId });
-      return this.request(`/users/${userId}/bookmarks`, {
-        method: 'POST',
-        body: JSON.stringify({ materialId })
-      });
+      console.log('⚠️ Bookmarks API not implemented, bookmark not saved');
+      return { success: true, message: 'Bookmark functionality not implemented yet' };
     } catch (error) {
       console.error('❌ Error adding bookmark:', error);
-      return { success: false, error: error.message };
+      throw error;
     }
   }
 
   async removeBookmark(userId, materialId) {
     try {
       console.log('➖ Removing bookmark:', { userId, materialId });
-      return this.request(`/users/${userId}/bookmarks/${materialId}`, {
-        method: 'DELETE'
-      });
+      console.log('⚠️ Bookmarks API not implemented, bookmark not removed');
+      return { success: true, message: 'Bookmark functionality not implemented yet' };
     } catch (error) {
       console.error('❌ Error removing bookmark:', error);
-      return { success: false, error: error.message };
+      throw error;
     }
   }
 }

@@ -510,11 +510,43 @@ const MaterialViewer = ({ material, onClose }) => {
 
           {/* Main Content */}
           <div style={styles.materialContent}>
-            {material.content ? (
+            {material.content && material.content.trim() ? (
               <div dangerouslySetInnerHTML={{ __html: material.content }} />
+            ) : material.type === 'pdf' && material.pdfUrl ? (
+              <iframe 
+                src={material.pdfUrl} 
+                style={styles.pdfFrame}
+                title="PDF Viewer"
+              />
+            ) : attachments.length > 0 ? (
+              <div>
+                <p>Основное содержимое в прикрепленных файлах:</p>
+                {attachments.map((attachment, index) => (
+                  <div key={index} style={styles.attachmentItem}>
+                    <div style={styles.attachmentInfo}>
+                      <div style={styles.attachmentIcon}>
+                        {getFileIcon(attachment.name)}
+                      </div>
+                      <div>
+                        <div style={styles.attachmentName}>{attachment.name}</div>
+                        <div style={styles.attachmentSize}>
+                          {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : 'Размер неизвестен'}
+                        </div>
+                      </div>
+                    </div>
+                    <button 
+                      style={styles.downloadBtn}
+                      onClick={() => handleFileDownload(attachment)}
+                    >
+                      Открыть
+                    </button>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <div style={styles.noContent}>
-                Содержимое материала не загружено
+              <div>
+                <p>Материал "{material.title}" создан, но содержимое еще не добавлено.</p>
+                <p>Попросите автора добавить текст, файлы или другое содержимое.</p>
               </div>
             )}
           </div>

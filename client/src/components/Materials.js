@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Materials.css';
+import apiClient from '../services/apiClient';
 
-const Materials = () => {
+const Materials = ({ materials: propMaterials = [] }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const categories = [
     { id: 'all', name: 'Барлығы', icon: '📚' },
@@ -12,7 +15,54 @@ const Materials = () => {
     { id: 'interactive', name: 'Интерактивті', icon: '🎮' }
   ];
 
-  const materials = [
+  useEffect(() => {
+    if (propMaterials.length > 0) {
+      setMaterials(propMaterials);
+      setLoading(false);
+    } else {
+      loadMaterials();
+    }
+  }, [propMaterials]);
+
+  const loadMaterials = async () => {
+    try {
+      setLoading(true);
+      const publishedMaterials = await apiClient.getMaterialsForStudent();
+      
+      const formattedMaterials = publishedMaterials.map(item => ({
+        id: item.id,
+        title: item.title || 'Без названия',
+        subject: item.category || 'Общее',
+        type: item.type || 'text',
+        duration: `${item.duration || 10} мин`,
+        views: item.views_count || 0,
+        rating: 4.5,
+        thumbnail: getTypeIcon(item.type),
+        description: item.description || 'Описание отсутствует',
+        isBookmarked: false,
+        progress: 0,
+        content: item.content
+      }));
+      
+      setMaterials(formattedMaterials);
+    } catch (error) {
+      console.error('Error loading materials:', error);
+      setMaterials([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case 'video': return '🎥';
+      case 'pdf': return '📄';
+      case 'interactive': return '🎮';
+      default: return '📚';
+    }
+  };
+
+  const staticMaterials = [
     {
       id: 1,
       title: 'Механика негіздері',
@@ -126,6 +176,17 @@ const Materials = () => {
     return matchesCategory && matchesSearch;
   });
 
+  if (loading) {
+    return (
+      <div className="materials-container">
+        <div className="loading-state">
+          <div className="loading-spinner">⏳</div>
+          <p>Материалы загружаются...</p>
+        </div>
+      </div>
+    );
+  }
+
   const toggleBookmark = (id) => {
     // В реальном приложении здесь будет API вызов
     console.log('Toggle bookmark for material:', id);
@@ -214,11 +275,11 @@ const Materials = () => {
         ))}
       </div>
 
-      {filteredMaterials.length === 0 && (
+      {filteredMaterials.length === 0 && !loading && (
         <div className="no-results">
           <div className="no-results-icon">📭</div>
           <h3>Материалдар табылмады</h3>
-          <p>Іздеу шарттарын өзгертіп көріңіз</p>
+          <p>Материалы не найдены. Попробуйте создать новый материал.</p>
         </div>
       )}
     </div>

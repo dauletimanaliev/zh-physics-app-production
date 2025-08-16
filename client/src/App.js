@@ -14,6 +14,7 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import QuestsPage from './pages/QuestsPage';
 import TestsPage from './pages/TestsPage';
 import MaterialsPage from './pages/MaterialsPage';
+import MaterialPage from './pages/MaterialPage';
 import MaterialManagement from './pages/teacher/MaterialManagement';
 import DirectorDashboard from './pages/DirectorDashboard';
 import ProfilePage from './pages/ProfilePage';
@@ -30,6 +31,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRegistered, setIsRegistered] = useState(false);
   const [currentPage, setCurrentPage] = useState('home');
+  const [materialId, setMaterialId] = useState(null);
 
   useEffect(() => {
     // Initialize Telegram Web App
@@ -55,8 +57,11 @@ function App() {
   }, [user]);
 
   // Navigation function to change pages
-  const navigateTo = (page) => {
+  const navigateTo = (page, params = {}) => {
     setCurrentPage(page);
+    if (params.materialId) {
+      setMaterialId(params.materialId);
+    }
   };
 
   // Make navigation available globally
@@ -112,6 +117,8 @@ function App() {
           return <StudentQuickActionsPage />;
         case 'materials':
           return <MaterialsPage />;
+        case 'material':
+          return <MaterialPage materialId={materialId} navigateTo={navigateTo} />;
         case 'tests':
           return <TestsPage />;
         case 'schedule':
@@ -141,6 +148,8 @@ function App() {
           return <StudentManagementPage />;
         case 'materials':
           return <MaterialManagement />;
+        case 'material':
+          return <MaterialPage materialId={materialId} navigateTo={navigateTo} />;
         case 'tests':
           return <TestsPage />;
         case 'schedule':

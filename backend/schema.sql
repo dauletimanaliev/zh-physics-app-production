@@ -35,6 +35,7 @@ CREATE TABLE materials (
     is_published BOOLEAN DEFAULT false,
     author_id VARCHAR(50) REFERENCES users(telegram_id) ON DELETE CASCADE,
     tags TEXT, -- comma-separated tags
+    attachments TEXT, -- JSON string with file attachments
     video_url TEXT,
     pdf_url TEXT,
     thumbnail_url TEXT,

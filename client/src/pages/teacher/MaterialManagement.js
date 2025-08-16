@@ -3,7 +3,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import apiClient from '../../services/apiClient';
 import FileUploader from '../../components/FileUploader';
-import MaterialViewer from '../../components/MaterialViewer';
 
 const MaterialManagement = () => {
   const { user } = useAuth();
@@ -16,8 +15,6 @@ const MaterialManagement = () => {
   const [materialToDelete, setMaterialToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [viewingMaterial, setViewingMaterial] = useState(null);
-  const [showMaterialViewer, setShowMaterialViewer] = useState(false);
 
   // Form state for creating/editing materials
   const [materialForm, setMaterialForm] = useState({
@@ -249,7 +246,7 @@ const MaterialManagement = () => {
       difficulty: material.difficulty,
       duration: material.duration,
       isPublished: material.isPublished,
-      tags: material.tags ? material.tags.join(', ') : '',
+      tags: material.tags ? (Array.isArray(material.tags) ? material.tags.join(', ') : material.tags) : '',
       videoUrl: material.videoUrl || '',
       pdfUrl: material.pdfUrl || '',
       thumbnailUrl: material.thumbnailUrl || ''
@@ -278,15 +275,20 @@ const MaterialManagement = () => {
     }
   };
 
-  const handleViewMaterial = (material) => {
-    setViewingMaterial(material);
-    setShowMaterialViewer(true);
+  const cancelDeleteMaterial = () => {
+    setShowDeleteDialog(false);
+    setMaterialToDelete(null);
   };
 
-  const handleCloseMaterialViewer = () => {
-    setShowMaterialViewer(false);
-    setViewingMaterial(null);
+  const handleViewMaterial = (material) => {
+    // Navigate to material page instead of opening modal
+    if (window.navigateTo) {
+      window.navigateTo('material', { materialId: material.id });
+    } else {
+      console.error('Navigation function not available');
+    }
   };
+
 
   const handlePublishMaterial = async (materialId, isPublished) => {
     try {
@@ -1007,13 +1009,6 @@ const MaterialManagement = () => {
         </div>
       )}
 
-      {/* Material Viewer Modal */}
-      {showMaterialViewer && viewingMaterial && (
-        <MaterialViewer
-          material={viewingMaterial}
-          onClose={handleCloseMaterialViewer}
-        />
-      )}
     </div>
   );
 };

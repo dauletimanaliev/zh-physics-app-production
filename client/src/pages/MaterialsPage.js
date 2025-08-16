@@ -105,15 +105,9 @@ const MaterialsPage = () => {
       try {
         console.log('🔗 Loading ALL global materials from teachers/admins...');
         
-        // 1. Get global materials (shared by teachers)
-        const sharedMaterials = await apiClient.getGlobalMaterials();
-        if (sharedMaterials && sharedMaterials.length > 0) {
-          const publishedShared = sharedMaterials.filter(material => material.isPublished !== false);
-          materialsData = [...materialsData, ...publishedShared];
-          console.log('✅ Loaded shared materials from teachers:', publishedShared.length);
-        }
+        // 1. Get materials from API (all published materials)
+        console.log('📚 Loading published materials from database, category:', selectedCategory);
         
-        // 2. Get materials from API (all published materials)
         const response = await apiClient.getMaterialsForStudent();
         console.log('📚 API materials response:', response);
         
@@ -230,18 +224,12 @@ const MaterialsPage = () => {
     return matchesSearch && matchesCategory;    
   });
 
-  const openMaterial = async (material) => {
-    try {
-      // Load full material content if not already loaded
-      if (!material.content || material.content.length < 100) {
-        const fullMaterial = await apiClient.getMaterial(material.id);
-        setSelectedMaterial(fullMaterial);
-      } else {
-        setSelectedMaterial(material);
-      }
-    } catch (error) {
-      console.error('Error loading material:', error);
-      setSelectedMaterial(material); // Show what we have
+  const openMaterial = (material) => {
+    // Navigate to material page instead of opening modal
+    if (window.navigateTo) {
+      window.navigateTo('material', { materialId: material.id });
+    } else {
+      console.error('Navigation function not available');
     }
   };
 
@@ -598,13 +586,6 @@ const MaterialsPage = () => {
         </div>
       )}
 
-      {/* Material Viewer Modal */}
-      {selectedMaterial && (
-        <MaterialViewer 
-          material={selectedMaterial} 
-          onClose={closeMaterial}
-        />
-      )}
     </div>
   );
 };
