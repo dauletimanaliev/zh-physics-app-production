@@ -1162,6 +1162,23 @@ async def get_materials_for_student(category: Optional[str] = None):
         print(f"❌ Error loading materials: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/materials/{material_id}")
+async def get_material(material_id: int):
+    """Get a specific material by ID"""
+    try:
+        print(f"📖 Loading material {material_id}...")
+        material = await db.get_material_by_id(material_id)
+        if not material:
+            print(f"❌ Material {material_id} not found in database")
+            raise HTTPException(status_code=404, detail="Material not found")
+        print(f"✅ Material {material_id} loaded successfully: {material.get('title', 'No title')}")
+        return material
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error loading material {material_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error loading material: {str(e)}")
+
 @app.get("/api/materials/{material_id}/content")
 async def get_material_content(material_id: int):
     """Get full content of a specific material"""
