@@ -282,6 +282,25 @@ async def get_teacher_materials(teacher_id: str):
 async def root():
     return {"message": "Physics Bot API v2.0", "status": "running", "database": "PostgreSQL"}
 
+# Temporary fix endpoint to publish materials
+@app.post("/api/fix-materials-status")
+async def fix_materials_status():
+    """Temporary endpoint to fix isPublished status for existing materials"""
+    try:
+        print("🔧 Fixing materials publication status...")
+        async with db.pool.acquire() as conn:
+            # Update all materials with isPublished = 0 to isPublished = 1
+            result = await conn.execute('''
+                UPDATE materials 
+                SET "isPublished" = 1 
+                WHERE "isPublished" = 0
+            ''')
+            print(f"✅ Updated {result.split()[-1]} materials to published status")
+            return {"message": f"Fixed publication status for materials", "updated_count": result.split()[-1]}
+    except Exception as e:
+        print(f"❌ Error fixing materials status: {e}")
+        raise HTTPException(status_code=500, detail=f"Error fixing materials: {str(e)}")
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     print(f"🚀 Starting Physics Bot API on port {port}")
