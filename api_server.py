@@ -392,7 +392,55 @@ async def clear_all_users():
         print(f"❌ Error clearing users: {e}")
         raise HTTPException(status_code=500, detail=f"Error clearing users: {str(e)}")
 
-# New Schedule System Endpoints
+# Schedule Management Endpoints
+@app.post("/api/schedules/reset")
+async def reset_schedules_table():
+    """Reset the schedules table with proper structure"""
+    try:
+        print("🔄 Resetting schedules table...")
+        
+        async with aiosqlite.connect(db.db_path) as conn:
+            # Drop existing table
+            await conn.execute('DROP TABLE IF EXISTS schedules')
+            
+            # Create new table with correct structure
+            await conn.execute('''
+                CREATE TABLE schedules (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    subject TEXT,
+                    day_of_week TEXT,
+                    start_time TEXT,
+                    end_time TEXT,
+                    start_date TEXT,
+                    end_date TEXT,
+                    location TEXT,
+                    max_students INTEGER DEFAULT 30,
+                    teacher_id INTEGER,
+                    user_id INTEGER,
+                    is_recurring BOOLEAN DEFAULT 0,
+                    type TEXT DEFAULT 'lecture',
+                    difficulty TEXT DEFAULT 'intermediate',
+                    duration INTEGER DEFAULT 90,
+                    price INTEGER DEFAULT 0,
+                    tags TEXT,
+                    is_online BOOLEAN DEFAULT 0,
+                    requirements TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            await conn.commit()
+            
+        print("✅ Schedules table reset successfully")
+        return {"message": "Schedules table reset successfully"}
+        
+    except Exception as e:
+        print(f"❌ Error resetting schedules table: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/schedules")
 async def create_schedule(schedule_data: Dict[str, Any]):
     try:
