@@ -422,8 +422,37 @@ async def create_schedule(schedule_data: Dict[str, Any]):
         is_online = schedule_data.get('isOnline', False)
         requirements = schedule_data.get('requirements', '')
         
-        # Create a simple schedule record (using existing database structure)
+        # Create a simple schedule record (using basic database structure)
         async with aiosqlite.connect(db.db_path) as conn:
+            # First ensure the table exists with proper structure
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS schedules (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    subject TEXT,
+                    day_of_week TEXT,
+                    start_time TEXT,
+                    end_time TEXT,
+                    start_date TEXT,
+                    end_date TEXT,
+                    location TEXT,
+                    max_students INTEGER DEFAULT 30,
+                    teacher_id INTEGER,
+                    user_id INTEGER,
+                    is_recurring BOOLEAN DEFAULT 0,
+                    type TEXT DEFAULT 'lecture',
+                    difficulty TEXT DEFAULT 'intermediate',
+                    duration INTEGER DEFAULT 90,
+                    price INTEGER DEFAULT 0,
+                    tags TEXT,
+                    is_online BOOLEAN DEFAULT 0,
+                    requirements TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             cursor = await conn.execute('''
                 INSERT INTO schedules (title, description, subject, day_of_week, start_time, end_time,
                                      start_date, end_date, location, max_students, teacher_id, user_id,
@@ -475,6 +504,35 @@ async def get_user_schedules(user_id: int):
         print(f"📅 Loading schedules for user: {user_id}")
         
         async with aiosqlite.connect(db.db_path) as conn:
+            # First ensure the table exists with proper structure
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS schedules (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    subject TEXT,
+                    day_of_week TEXT,
+                    start_time TEXT,
+                    end_time TEXT,
+                    start_date TEXT,
+                    end_date TEXT,
+                    location TEXT,
+                    max_students INTEGER DEFAULT 30,
+                    teacher_id INTEGER,
+                    user_id INTEGER,
+                    is_recurring BOOLEAN DEFAULT 0,
+                    type TEXT DEFAULT 'lecture',
+                    difficulty TEXT DEFAULT 'intermediate',
+                    duration INTEGER DEFAULT 90,
+                    price INTEGER DEFAULT 0,
+                    tags TEXT,
+                    is_online BOOLEAN DEFAULT 0,
+                    requirements TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             conn.row_factory = aiosqlite.Row
             async with conn.execute('''
                 SELECT * FROM schedules WHERE teacher_id = ? OR user_id = ? ORDER BY created_at DESC
