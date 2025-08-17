@@ -73,10 +73,8 @@ const ScheduleManager = () => {
       setNewSchedule({ title: '', description: '', visibility: 'private' });
       setShowCreateForm(false);
       await loadUserSchedules();
-      alert('Расписание создано успешно!');
     } catch (error) {
       console.error('Error creating schedule:', error);
-      alert('Ошибка при создании расписания');
     } finally {
       setLoading(false);
     }
@@ -110,7 +108,6 @@ const ScheduleManager = () => {
       await loadScheduleDetails(selectedSchedule.id);
     } catch (error) {
       console.error('Error adding schedule entry:', error);
-      alert('Ошибка при добавлении записи');
     }
   };
 

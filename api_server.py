@@ -607,6 +607,35 @@ async def get_public_schedules(user_id: int = None):
         print(f"📅 Loading public schedules for user: {user_id}")
         
         async with aiosqlite.connect(db.db_path) as conn:
+            # Ensure table exists first
+            await conn.execute('''
+                CREATE TABLE IF NOT EXISTS schedules (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    subject TEXT,
+                    day_of_week TEXT,
+                    start_time TEXT,
+                    end_time TEXT,
+                    start_date TEXT,
+                    end_date TEXT,
+                    location TEXT,
+                    max_students INTEGER DEFAULT 30,
+                    teacher_id INTEGER,
+                    user_id INTEGER,
+                    is_recurring BOOLEAN DEFAULT 0,
+                    type TEXT DEFAULT 'lecture',
+                    difficulty TEXT DEFAULT 'intermediate',
+                    duration INTEGER DEFAULT 90,
+                    price INTEGER DEFAULT 0,
+                    tags TEXT,
+                    is_online BOOLEAN DEFAULT 0,
+                    requirements TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             conn.row_factory = aiosqlite.Row
             # Get all schedules (no visibility column in our simple structure)
             async with conn.execute('''

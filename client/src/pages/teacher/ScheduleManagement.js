@@ -5,6 +5,7 @@ const ScheduleManagement = () => {
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [scheduleForm, setScheduleForm] = useState({
     title: '',
     description: '',
@@ -64,9 +65,14 @@ const ScheduleManagement = () => {
       await loadSchedules();
       setShowCreateModal(false);
       resetForm();
+      
+      // Show success message with animation
+      setSuccessMessage('✅ Расписание создано успешно!');
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('❌ Error creating schedule:', error);
-      alert('Ошибка при создании расписания: ' + error.message);
+      setSuccessMessage('❌ Ошибка при создании расписания');
+      setTimeout(() => setSuccessMessage(''), 4000);
     }
   };
 
@@ -143,17 +149,17 @@ const ScheduleManagement = () => {
     controls: {
       display: 'flex',
       justifyContent: 'center',
-      gap: '20px',
-      marginBottom: '40px',
+      gap: '15px',
+      marginBottom: '30px',
       flexWrap: 'wrap'
     },
     createButton: {
       background: 'linear-gradient(135deg, #10b981, #059669)',
       color: 'white',
       border: 'none',
-      padding: '15px 30px',
-      borderRadius: '12px',
-      fontSize: '16px',
+      padding: '12px 24px',
+      borderRadius: '10px',
+      fontSize: '15px',
       fontWeight: '600',
       cursor: 'pointer',
       boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
@@ -161,6 +167,81 @@ const ScheduleManagement = () => {
       display: 'flex',
       alignItems: 'center',
       gap: '8px'
+    },
+    loadingMessage: {
+      textAlign: 'center',
+      color: 'white',
+      fontSize: '18px',
+      padding: '40px',
+      background: 'rgba(255, 255, 255, 0.1)',
+      borderRadius: '12px',
+      backdropFilter: 'blur(10px)',
+      margin: '20px auto',
+      maxWidth: '400px'
+    },
+    errorMessage: {
+      textAlign: 'center',
+      color: '#ff6b6b',
+      fontSize: '16px',
+      padding: '20px',
+      background: 'rgba(255, 107, 107, 0.1)',
+      borderRadius: '10px',
+      border: '1px solid rgba(255, 107, 107, 0.3)',
+      margin: '20px auto',
+      maxWidth: '500px'
+    },
+    emptyState: {
+      textAlign: 'center',
+      color: 'white',
+      fontSize: '16px',
+      padding: '60px 20px',
+      background: 'rgba(255, 255, 255, 0.1)',
+      borderRadius: '12px',
+      backdropFilter: 'blur(10px)',
+      margin: '20px auto',
+      maxWidth: '600px'
+    },
+    successMessage: {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      background: 'linear-gradient(135deg, #10b981, #059669)',
+      color: 'white',
+      padding: '16px 24px',
+      borderRadius: '12px',
+      fontSize: '16px',
+      fontWeight: '600',
+      boxShadow: '0 8px 32px rgba(16, 185, 129, 0.4)',
+      zIndex: 1000,
+      transform: 'translateX(400px)',
+      opacity: 0,
+      transition: 'all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      backdropFilter: 'blur(10px)'
+    },
+    successMessageShow: {
+      transform: 'translateX(0)',
+      opacity: 1
+    },
+    errorMessage: {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+      color: 'white',
+      padding: '16px 24px',
+      borderRadius: '12px',
+      fontSize: '16px',
+      fontWeight: '600',
+      boxShadow: '0 8px 32px rgba(239, 68, 68, 0.4)',
+      zIndex: 1000,
+      transform: 'translateX(400px)',
+      opacity: 0,
+      transition: 'all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      backdropFilter: 'blur(10px)'
+    },
+    errorMessageShow: {
+      transform: 'translateX(0)',
+      opacity: 1
     },
     scheduleGrid: {
       display: 'grid',
@@ -319,9 +400,8 @@ const ScheduleManagement = () => {
   if (loading) {
     return (
       <div style={pageStyles.container}>
-        <div style={{ textAlign: 'center', paddingTop: '100px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>⏳</div>
-          <h2 style={{ color: 'white' }}>Загрузка расписания...</h2>
+        <div style={pageStyles.loadingMessage}>
+          📅 Загружаем расписания...
         </div>
       </div>
     );
@@ -352,6 +432,19 @@ const ScheduleManagement = () => {
           ➕ Создать новое
         </button>
       </div>
+
+      {/* Success/Error Message */}
+      {successMessage && (
+        <div 
+          style={{
+            ...pageStyles.successMessage,
+            ...(successMessage.includes('❌') ? pageStyles.errorMessage : {}),
+            ...(successMessage ? pageStyles.successMessageShow : {})
+          }}
+        >
+          {successMessage}
+        </div>
+      )}
 
       {/* Schedule Grid */}
       {schedules.length === 0 ? (
