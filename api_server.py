@@ -602,9 +602,26 @@ async def get_user_schedules(user_id: int):
 @app.get("/api/schedules/public")
 async def get_public_schedules(user_id: int = None):
     try:
-        schedules = await schedule_db.get_public_schedules(user_id)
-        return {"schedules": schedules}
+        print(f"📅 Loading public schedules for user: {user_id}")
+        
+        async with aiosqlite.connect(db.db_path) as conn:
+            conn.row_factory = aiosqlite.Row
+            # Get all schedules (no visibility column in our simple structure)
+            async with conn.execute('''
+                SELECT * FROM schedules ORDER BY created_at DESC
+            ''') as cursor:
+                rows = await cursor.fetchall()
+                
+                schedules = []
+                for row in rows:
+                    schedule = dict(row)
+                    schedules.append(schedule)
+                
+                print(f"📊 Found {len(schedules)} public schedules")
+                return schedules
+                
     except Exception as e:
+        print(f"❌ Error loading public schedules: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/schedules/{schedule_id}")
