@@ -470,11 +470,12 @@ async def create_schedule(schedule_data: Dict[str, Any]):
         is_online = schedule_data.get('isOnline', False)
         requirements = schedule_data.get('requirements', '')
         
-        # Create a simple schedule record (using basic database structure)
+        # Force recreate table to ensure proper structure
         async with aiosqlite.connect(db.db_path) as conn:
-            # First ensure the table exists with proper structure
+            # Drop and recreate table to force proper structure
+            await conn.execute('DROP TABLE IF EXISTS schedules')
             await conn.execute('''
-                CREATE TABLE IF NOT EXISTS schedules (
+                CREATE TABLE schedules (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     description TEXT,
@@ -552,9 +553,10 @@ async def get_user_schedules(user_id: int):
         print(f"📅 Loading schedules for user: {user_id}")
         
         async with aiosqlite.connect(db.db_path) as conn:
-            # First ensure the table exists with proper structure
+            # Force recreate table to ensure proper structure
+            await conn.execute('DROP TABLE IF EXISTS schedules')
             await conn.execute('''
-                CREATE TABLE IF NOT EXISTS schedules (
+                CREATE TABLE schedules (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     description TEXT,
