@@ -587,7 +587,31 @@ async def get_user_schedules(user_id: int):
                 
                 schedules = []
                 for row in rows:
-                    schedule = dict(row)
+                    schedule = {
+                        "id": row["id"],
+                        "title": row["title"],
+                        "description": row["description"],
+                        "subject": row["subject"],
+                        "dayOfWeek": row["day_of_week"],
+                        "startTime": row["start_time"],
+                        "endTime": row["end_time"],
+                        "startDate": row["start_date"],
+                        "endDate": row["end_date"],
+                        "location": row["location"],
+                        "maxStudents": row["max_students"],
+                        "teacherId": row["teacher_id"],
+                        "userId": row["user_id"],
+                        "isRecurring": bool(row["is_recurring"]),
+                        "type": row["type"],
+                        "difficulty": row["difficulty"],
+                        "duration": row["duration"],
+                        "price": row["price"],
+                        "tags": row["tags"],
+                        "isOnline": bool(row["is_online"]),
+                        "requirements": row["requirements"],
+                        "createdAt": row["created_at"],
+                        "updatedAt": row["updated_at"]
+                    }
                     schedules.append(schedule)
                 
                 print(f"📊 Found {len(schedules)} schedules")
