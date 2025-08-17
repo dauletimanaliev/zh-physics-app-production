@@ -160,8 +160,6 @@ function App() {
           return <MaterialPage materialId={materialId} navigateTo={navigateTo} />;
         case 'tests':
           return <TestsPage />;
-        case 'schedule':
-          return <SchedulePage />;
         case 'leaderboard':
           return <LeaderboardPage />;
         case 'profile':

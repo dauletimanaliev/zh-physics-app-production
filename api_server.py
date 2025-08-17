@@ -1,20 +1,36 @@
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from pydantic import BaseModel, ValidationError
-from typing import List, Optional, Dict, Any
+from pydantic import BaseModel
+from typing import Dict, Any, List, Optional
 import asyncio
-import uvicorn
-import os
 from database import Database
 from database_schedule import ScheduleDatabase
 import json
 import traceback
 from datetime import datetime
+import aiosqlite
+import os
 
 # Lifespan event handler to replace deprecated on_event
 from contextlib import asynccontextmanager
+
+# Pydantic models
+class User(BaseModel):
+    telegram_id: int
+    first_name: str
+    username: Optional[str] = None
+    role: Optional[str] = 'student'
+
+class TestAnswer(BaseModel):
+    test_id: int
+    answer: str
+    user_id: int
+
+class ScheduleCreate(BaseModel):
+    title: str
+    description: str
+    visibility: str = 'private'
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -326,6 +342,28 @@ async def submit_test_answer(answer: TestAnswer):
         raise HTTPException(status_code=500, detail=str(e))
 
 # Materials endpoints
+@app.get("/api/materials")
+async def get_all_materials():
+    """Get all materials"""
+    try:
+        materials = await db.get_all_materials()
+        return materials
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/materials/{material_id}")
+async def get_material_by_id(material_id: int):
+    """Get material by ID"""
+    try:
+        material = await db.get_material_by_id(material_id)
+        if not material:
+            raise HTTPException(status_code=404, detail="Material not found")
+        return material
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/materials/by-subject/{subject}")
 async def get_materials_by_subject(subject: str, language: str = 'ru'):
     try:
@@ -356,28 +394,103 @@ async def clear_all_users():
 
 # New Schedule System Endpoints
 @app.post("/api/schedules")
-async def create_schedule(schedule: ScheduleCreate, user_id: int):
+async def create_schedule(schedule_data: Dict[str, Any]):
     try:
-        # Determine creator type based on user role (simplified - you can enhance this)
-        creator_type = 'student'  # Default, can be enhanced with role checking
+        print(f"📅 Creating schedule: {schedule_data.get('title', 'Unknown')}")
         
-        schedule_id = await schedule_db.create_schedule(
-            title=schedule.title,
-            description=schedule.description,
-            creator_id=user_id,
-            creator_type=creator_type,
-            visibility=schedule.visibility
-        )
-        return {"message": "Schedule created successfully", "schedule_id": schedule_id}
+        # Extract data from request
+        title = schedule_data.get('title', '')
+        description = schedule_data.get('description', '')
+        subject = schedule_data.get('subject', 'Физика')
+        day_of_week = schedule_data.get('dayOfWeek', 'monday')
+        start_time = schedule_data.get('startTime', '')
+        end_time = schedule_data.get('endTime', '')
+        start_date = schedule_data.get('startDate', '')
+        end_date = schedule_data.get('endDate', '')
+        location = schedule_data.get('location', '')
+        max_students = schedule_data.get('maxStudents', 30)
+        teacher_id = schedule_data.get('teacherId', 1)
+        user_id = schedule_data.get('userId', teacher_id)
+        is_recurring = schedule_data.get('isRecurring', False)
+        
+        # Additional fields
+        schedule_type = schedule_data.get('type', 'lecture')
+        difficulty = schedule_data.get('difficulty', 'intermediate')
+        duration = schedule_data.get('duration', 90)
+        price = schedule_data.get('price', 0)
+        tags = schedule_data.get('tags', '')
+        is_online = schedule_data.get('isOnline', False)
+        requirements = schedule_data.get('requirements', '')
+        
+        # Create a simple schedule record (using existing database structure)
+        async with aiosqlite.connect(db.db_path) as conn:
+            cursor = await conn.execute('''
+                INSERT INTO schedules (title, description, subject, day_of_week, start_time, end_time,
+                                     start_date, end_date, location, max_students, teacher_id, user_id,
+                                     is_recurring, type, difficulty, duration, price, tags, is_online,
+                                     requirements, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
+                        datetime('now'), datetime('now'))
+            ''', (
+                title, description, subject, day_of_week, start_time, end_time,
+                start_date, end_date, location, max_students, teacher_id, user_id,
+                is_recurring, schedule_type, difficulty, duration, price, tags, is_online,
+                requirements
+            ))
+            
+            schedule_id = cursor.lastrowid
+            await conn.commit()
+            
+        print(f"✅ Schedule created with ID: {schedule_id}")
+        
+        return {
+            "id": schedule_id,
+            "title": title,
+            "description": description,
+            "subject": subject,
+            "dayOfWeek": day_of_week,
+            "startTime": start_time,
+            "endTime": end_time,
+            "startDate": start_date,
+            "endDate": end_date,
+            "location": location,
+            "maxStudents": max_students,
+            "teacherId": teacher_id,
+            "isRecurring": is_recurring,
+            "type": schedule_type,
+            "difficulty": difficulty,
+            "duration": duration,
+            "price": price,
+            "tags": tags,
+            "isOnline": is_online,
+            "requirements": requirements
+        }
     except Exception as e:
+        print(f"❌ Error creating schedule: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/schedules/user/{user_id}")
 async def get_user_schedules(user_id: int):
     try:
-        schedules = await schedule_db.get_user_schedules(user_id)
-        return {"schedules": schedules}
+        print(f"📅 Loading schedules for user: {user_id}")
+        
+        async with aiosqlite.connect(db.db_path) as conn:
+            conn.row_factory = aiosqlite.Row
+            async with conn.execute('''
+                SELECT * FROM schedules WHERE teacher_id = ? OR user_id = ? ORDER BY created_at DESC
+            ''', (user_id, user_id)) as cursor:
+                rows = await cursor.fetchall()
+                
+                schedules = []
+                for row in rows:
+                    schedule = dict(row)
+                    schedules.append(schedule)
+                
+                print(f"📊 Found {len(schedules)} schedules")
+                return schedules
+                
     except Exception as e:
+        print(f"❌ Error loading schedules: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/schedules/public")
@@ -1059,78 +1172,95 @@ async def get_teacher_materials(teacher_id: int):
 async def create_material(material_data: Dict[str, Any]):
     """Create a new material with optional file attachments"""
     try:
-        print(f"📝 Creating new material with data: {material_data}")
-        print(f"📋 Material title: '{material_data.get('title', 'Untitled')}'")
+        print(f"📝 Creating material with data: {material_data}")
         
-        # Extract attachments if present
-        attachments = material_data.pop('attachments', [])
-        print(f"📎 Found {len(attachments)} attachments")
+        # Extract material fields
+        title = material_data.get('title', '')
+        description = material_data.get('description', '')
+        content = material_data.get('content', '')
+        material_type = material_data.get('type', 'text')
+        category = material_data.get('category', 'mechanics')
+        difficulty = material_data.get('difficulty', 'easy')
+        duration = material_data.get('duration', 10)
+        is_published = material_data.get('isPublished', False)
+        teacher_id = material_data.get('teacherId', '111333')  # Default teacher ID
         
-        # Convert material to dict for database insertion
+        # Handle tags
         tags = material_data.get('tags', [])
-        if isinstance(tags, list):
-            tags_json = json.dumps(tags)
-        else:
-            tags_json = str(tags) if tags else json.dumps([])
+        if isinstance(tags, str):
+            # If tags is a string, split by comma
+            tags = [tag.strip() for tag in tags.split(',') if tag.strip()]
+        tags_json = json.dumps(tags) if tags else None
+        
+        # Handle URLs
+        video_url = material_data.get('videoUrl') or None
+        pdf_url = material_data.get('pdfUrl') or None
+        thumbnail_url = material_data.get('thumbnailUrl') or None
+        
+        # Handle attachments
+        attachments = material_data.get('attachments', [])
+        attachments_json = json.dumps(attachments) if attachments else None
+        
+        print(f"🔍 Material fields: title='{title}', type='{material_type}', category='{category}'")
+        print(f"📎 Attachments: {len(attachments)} files")
+        
+        # Insert material into database
+        async with aiosqlite.connect(db.db_path) as conn:
+            cursor = await conn.execute('''
+                INSERT INTO materials (title, description, content, type, category, difficulty, duration, 
+                                     is_published, tags, video_url, pdf_url, thumbnail_url, teacher_id, attachments,
+                                     subject, language, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+            ''', (
+                title, description, content, material_type, category, difficulty, duration,
+                is_published, tags_json, video_url, pdf_url, thumbnail_url, teacher_id, attachments_json,
+                'Физика', 'ru'  # Default subject and language
+            ))
             
-        material_dict = {
-            'title': material_data.get('title', ''),
-            'description': material_data.get('description', ''),
-            'content': material_data.get('content', ''),
-            'type': material_data.get('type', 'text'),
-            'category': material_data.get('category', 'mechanics'),
-            'difficulty': material_data.get('difficulty', 'easy'),
-            'duration': material_data.get('duration', 10),
-            'is_published': material_data.get('isPublished', False),
-            'tags': tags_json,
-            'video_url': material_data.get('videoUrl', ''),
-            'pdf_url': material_data.get('pdfUrl', ''),
-            'thumbnail_url': material_data.get('thumbnailUrl', ''),
-            'teacher_id': material_data.get('teacherId', 1),
-            'created_at': datetime.now().isoformat(),
-            'updated_at': datetime.now().isoformat()
-        }
-        
-        print(f"🔧 Prepared material dict: {material_dict}")
-        
-        # Process attachments and store as JSON
-        if attachments:
-            processed_attachments = []
-            for attachment in attachments:
-                processed_attachment = {
-                    'name': attachment.get('name', ''),
-                    'type': attachment.get('type', ''),
-                    'size': attachment.get('size', 0),
-                    'data': attachment.get('data', ''),  # Base64 data
-                    'uploaded_at': datetime.now().isoformat()
-                }
-                processed_attachments.append(processed_attachment)
+            material_id = cursor.lastrowid
+            await conn.commit()
             
-            material_dict['attachments'] = json.dumps(processed_attachments)
-            print(f"📎 Processing {len(processed_attachments)} attachments")
-        else:
-            material_dict['attachments'] = json.dumps([])
-            print("📎 No attachments to process")
-        
-        print("💾 Adding material to database...")
-        
-        # Add material to database
-        try:
-            material_id = await db.add_material(material_dict)
-            print(f"✅ Material created successfully with ID: {material_id}")
-        except Exception as db_error:
-            print(f"❌ Database error: {db_error}")
-            print(f"📜 Database traceback: {traceback.format_exc()}")
-            raise db_error
-        
-        return {
-            "message": "Material created successfully",
-            "material_id": material_id,
-            "material": {**material_dict, "id": material_id}
-        }
+            print(f"✅ Material created with ID: {material_id}")
+            
+            # Return the created material with correct field names for frontend
+            return {
+                "message": "Material created successfully",
+                "material_id": material_id,
+                "id": material_id,
+                "title": title,
+                "description": description,
+                "content": content,
+                "type": material_type,
+                "category": category,
+                "subject": 'Физика',
+                "difficulty": difficulty,
+                "duration": duration,
+                "isPublished": is_published,
+                "is_published": is_published,
+                "tags": tags,
+                "videoUrl": video_url,
+                "pdfUrl": pdf_url,
+                "thumbnailUrl": thumbnail_url,
+                "teacherId": teacher_id,
+                "attachments": attachments
+            }
+            
     except Exception as e:
         print(f"❌ Error creating material: {e}")
         print(f"📜 Full traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
+@app.delete("/api/materials/{material_id}")
+async def delete_material(material_id: int):
+    """Delete material by ID"""
+    try:
+        success = await db.delete_material(material_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Material not found")
+        return {"message": "Material deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error deleting material: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/materials/{material_id}")

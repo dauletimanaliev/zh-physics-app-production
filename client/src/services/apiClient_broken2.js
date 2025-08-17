@@ -69,23 +69,23 @@ class ApiClient {
 
   async getMaterialsBySubject(subject, language = 'ru') {
     return this.request(`/materials/by-subject/${subject}?language=${language}`);
-  }
+  },
 
   async createMaterial(materialData) {
     return this.request('/materials', 'POST', materialData);
-  }
+  },
 
   async updateMaterial(materialId, materialData) {
     return this.request(`/materials/${materialId}`, 'PUT', materialData);
-  }
+  },
 
   async deleteMaterial(materialId) {
     return this.request(`/materials/${materialId}`, 'DELETE');
-  }
+  },
 
   async getTeacherMaterials(teacherId) {
     return this.request(`/materials/teacher/${teacherId}`);
-  }
+  },
 
   // Tests methods
   async getTests(subject = 'Физика', language = 'ru', limit = 10) {

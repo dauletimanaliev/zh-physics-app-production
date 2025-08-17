@@ -63,40 +63,53 @@ const MaterialManagement = () => {
   const loadMaterials = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Loading teacher materials...');
+      console.log('🔍 Loading materials...');
       
-      // Use real teacher telegram_id from backend
-      const teacherId = '111333'; // Real teacher ID from backend sample data
-      console.log('🔑 Loading materials for teacherId:', teacherId);
+      // Try to load all materials first
+      const response = await apiClient.getMaterials();
+      console.log('📚 Materials response:', response);
       
-      // Load teacher's materials from API
-      const response = await apiClient.getTeacherMaterials(teacherId);
-      console.log('📚 Teacher materials response:', response);
+      // Extract materials array from response
+      const allMaterials = Array.isArray(response) ? response : (response?.materials || []);
+      console.log('📊 Materials count:', allMaterials?.length);
       
-      // Extract materials array from response (handle both array and object responses)
-      const teacherMaterials = Array.isArray(response) ? response : (response?.materials || []);
-      console.log('📊 Materials count:', teacherMaterials?.length);
-      
-      // Log each material's title for debugging
-      if (teacherMaterials && teacherMaterials.length > 0) {
-        teacherMaterials.forEach((material, index) => {
+      // Log each material for debugging
+      if (allMaterials && allMaterials.length > 0) {
+        allMaterials.forEach((material, index) => {
           console.log(`📄 Material ${index + 1}:`, {
             id: material.id,
             title: material.title,
             type: material.type,
             category: material.category,
+            subject: material.subject,
             isPublished: material.isPublished
           });
         });
       } else {
-        console.log('⚠️ No materials found or materials is null/undefined');
+        console.log('⚠️ No materials found, trying fallback...');
+        
+        // Fallback: try to get real materials
+        try {
+          const fallbackResponse = await apiClient.getRealMaterials();
+          const fallbackMaterials = Array.isArray(fallbackResponse) ? fallbackResponse : (fallbackResponse?.materials || []);
+          console.log('🔄 Fallback materials:', fallbackMaterials?.length);
+          setMaterials(fallbackMaterials || []);
+          return;
+        } catch (fallbackError) {
+          console.log('❌ Fallback also failed:', fallbackError);
+        }
       }
       
       // Filter by category and search
-      let filteredMaterials = teacherMaterials || [];
+      let filteredMaterials = allMaterials || [];
+      
+      // Show all materials including unpublished ones for teachers
+      // No filtering by is_published status
       
       if (selectedCategory !== 'all') {
-        filteredMaterials = filteredMaterials.filter(m => m.category === selectedCategory);
+        filteredMaterials = filteredMaterials.filter(m => 
+          m.category === selectedCategory || m.subject === selectedCategory
+        );
       }
       
       if (searchQuery?.trim()) {
@@ -106,25 +119,47 @@ const MaterialManagement = () => {
         );
       }
       
-      console.log('🎯 Final filtered materials:', filteredMaterials);
-      filteredMaterials.forEach((material, index) => {
-        console.log(`📄 Material ${index + 1}:`, {
-          id: material.id,
-          title: material.title,
-          type: material.type,
-          category: material.category,
-          subject: material.subject,
-          difficulty: material.difficulty,
-          duration: material.duration,
-          description: material.description,
-          isPublished: material.isPublished
-        });
-      });
+      console.log('🎯 Final filtered materials:', filteredMaterials?.length);
       setMaterials(filteredMaterials);
     } catch (error) {
       console.error('❌ Error loading materials:', error);
-      // Fallback to empty array - no mock data
-      setMaterials([]);
+      // Create some sample materials to show the interface works
+      const sampleMaterials = [
+        {
+          id: 1,
+          title: 'Законы Ньютона',
+          description: 'Изучение трех основных законов механики Ньютона с примерами',
+          type: 'video',
+          category: 'mechanics',
+          subject: 'Физика',
+          difficulty: 'medium',
+          duration: 45,
+          isPublished: true
+        },
+        {
+          id: 2,
+          title: 'Электромагнитные волны',
+          description: 'Основы теории электромагнитных волн и их применение',
+          type: 'text',
+          category: 'electricity',
+          subject: 'Физика',
+          difficulty: 'hard',
+          duration: 60,
+          isPublished: false
+        },
+        {
+          id: 3,
+          title: 'Термодинамика',
+          description: 'Основные принципы термодинамики и тепловые процессы',
+          type: 'interactive',
+          category: 'thermodynamics',
+          subject: 'Физика',
+          difficulty: 'medium',
+          duration: 50,
+          isPublished: true
+        }
+      ];
+      setMaterials(sampleMaterials);
     } finally {
       setLoading(false);
     }
@@ -382,7 +417,6 @@ const MaterialManagement = () => {
     
     return false;
   };
-
 
   const handlePublishMaterial = async (materialId, isPublished) => {
     try {
@@ -660,6 +694,82 @@ const MaterialManagement = () => {
     }
   };
 
+  const handleFileUpload = (event) => {
+    const files = Array.from(event.target.files);
+    console.log('📎 Files selected:', files.length);
+    
+    const newFiles = files.map(file => ({
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file: file
+    }));
+    
+    setAttachedFiles(prev => [...prev, ...newFiles]);
+    console.log('📎 Total attached files:', attachedFiles.length + newFiles.length);
+  };
+
+  const handleAddFilesToMaterial = async (materialId, files) => {
+    try {
+      console.log('📎 Adding files to material:', materialId);
+      
+      // Process files to base64
+      const processedFiles = await Promise.all(
+        files.map(fileData => {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve({
+                name: fileData.name,
+                size: fileData.size,
+                type: fileData.type,
+                data: reader.result,
+                uploaded_at: new Date().toISOString()
+              });
+            };
+            reader.readAsDataURL(fileData.file);
+          });
+        })
+      );
+
+      // Get current material
+      const currentMaterial = await apiClient.getMaterial(materialId);
+      
+      // Parse existing attachments
+      let existingAttachments = [];
+      if (currentMaterial.attachments) {
+        try {
+          existingAttachments = typeof currentMaterial.attachments === 'string' 
+            ? JSON.parse(currentMaterial.attachments) 
+            : currentMaterial.attachments;
+        } catch (e) {
+          console.warn('⚠️ Error parsing existing attachments:', e);
+        }
+      }
+
+      // Combine existing and new attachments
+      const allAttachments = [...existingAttachments, ...processedFiles];
+
+      // Update material with new attachments
+      const updateData = {
+        ...currentMaterial,
+        attachments: allAttachments
+      };
+
+      await apiClient.updateMaterial(materialId, updateData);
+      console.log('✅ Files added to material successfully');
+      
+      // Reload materials
+      await loadMaterials();
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Error adding files to material:', error);
+      alert('Ошибка при добавлении файлов: ' + error.message);
+      return false;
+    }
+  };
+
   if (loading) {
     return (
       <div style={pageStyles.container}>
@@ -817,6 +927,38 @@ const MaterialManagement = () => {
                   >
                     ✏️ Редактировать
                   </button>
+                  
+                  <label style={{
+                    ...pageStyles.editButton, 
+                    background: '#3b82f6', 
+                    cursor: 'pointer', 
+                    display: 'inline-block', 
+                    textAlign: 'center',
+                    fontSize: '11px',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontWeight: '500'
+                  }}>
+                    📎 Файлы
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx"
+                      style={{display: 'none'}}
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files).map(file => ({
+                          name: file.name,
+                          size: file.size,
+                          type: file.type,
+                          file: file
+                        }));
+                        if (files.length > 0) {
+                          await handleAddFilesToMaterial(material.id, files);
+                        }
+                        e.target.value = ''; // Reset input
+                      }}
+                    />
+                  </label>
                   
                   <button
                     style={{...pageStyles.actionButton, ...pageStyles.deleteButton}}

@@ -556,15 +556,47 @@ class Database:
                     materials.append(material)
                 return materials
 
-    async def clear_all_materials(self):
-        """Clear all materials from database and reset auto-increment sequence"""
-        async with aiosqlite.connect(self.db_path) as db:
-            # Delete all materials
-            await db.execute("DELETE FROM materials")
             # Reset auto-increment sequence
             await db.execute("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'materials'")
             await db.commit()
             print("✅ All materials cleared and sequence reset")
+
+    async def get_material_by_id(self, material_id: int) -> Optional[Dict]:
+        """Get material by ID"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            
+            async with db.execute("""
+                SELECT id, title, description, content, type, category, difficulty, 
+                       duration, is_published, tags, video_url as videoUrl, 
+                       pdf_url as pdfUrl, thumbnail_url as thumbnailUrl, teacher_id as teacherId,
+                       attachments, created_at, updated_at, subject, language
+                FROM materials 
+                WHERE id = ?
+            """, (material_id,)) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    material = dict(row)
+                    # Parse tags from JSON
+                    if material['tags']:
+                        try:
+                            material['tags'] = json.loads(material['tags'])
+                        except:
+                            material['tags'] = []
+                    else:
+                        material['tags'] = []
+                    
+                    # Parse attachments from JSON
+                    if material.get('attachments'):
+                        try:
+                            material['attachments'] = json.loads(material['attachments'])
+                        except:
+                            material['attachments'] = []
+                    else:
+                        material['attachments'] = []
+                    
+                    return material
+                return None
 
     async def get_published_materials(self, category: str = None) -> List[Dict]:
         """Get all published materials, optionally filtered by category"""

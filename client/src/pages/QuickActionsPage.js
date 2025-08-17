@@ -67,6 +67,18 @@ const QuickActionsPage = () => {
       }
     },
     {
+      id: 'create-schedule',
+      title: 'Создать расписание',
+      subtitle: 'Новое расписание',
+      icon: '📅',
+      color: '#ef4444',
+      action: () => {
+        if (window.navigateTo) {
+          window.navigateTo('schedule');
+        }
+      }
+    },
+    {
       id: 'view-reports',
       title: 'Посмотреть отчеты',
       subtitle: 'Аналитика класса',

@@ -547,7 +547,12 @@ const AdminPanel = () => {
     <div className="schedule-management">
       <div className="schedule-header">
         <h2>📅 Управление расписанием</h2>
-        <button className="create-event-btn">➕ Создать событие</button>
+        <button 
+          className="create-event-btn"
+          onClick={() => setCurrentPage('schedule')}
+        >
+          ➕ Создать событие
+        </button>
       </div>
 
       <div className="schedule-calendar">
