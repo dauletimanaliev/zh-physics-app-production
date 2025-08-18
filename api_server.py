@@ -890,18 +890,16 @@ async def get_teacher_students_by_code():
         users = await db.get_all_users()
         print(f"🔍 Total users found: {len(users)}")
         
-        # Filter students with code 111444 OR role student (fallback)
+        # Filter ONLY students with code 111444
         students = []
         for user in users:
-            user_role = user.get('role', 'student')  # Default to student if no role
-            user_code = user.get('code', '111444')   # Default to 111444 if no code
+            user_role = user.get('role', 'student')
+            user_code = user.get('code')
             
             print(f"👤 User {user.get('first_name')}: role={user_role}, code={user_code}")
             
-            if user_role == 'student':
-                # Add code if missing
-                if not user.get('code'):
-                    user['code'] = '111444'
+            # Only include actual students with code 111444
+            if user_role == 'student' and user_code == '111444':
                 students.append(user)
         
         print(f"📊 Students with code 111444: {len(students)}")
