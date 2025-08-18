@@ -2205,7 +2205,7 @@ async def get_all_virtual_questions():
     try:
         async with aiosqlite.connect("ent_bot.db") as db:
             cursor = await db.execute("""
-                SELECT question_id, text, type, topic, difficulty, options, correct_answer, explanation, formula, created_at
+                SELECT question_id, text, type, topic, difficulty, options, correct_answer, explanation, formula, original_photo, created_at
                 FROM virtual_questions ORDER BY created_at DESC
             """)
             rows = await cursor.fetchall()
@@ -2222,7 +2222,8 @@ async def get_all_virtual_questions():
                     "correct_answer": row[6],
                     "explanation": row[7],
                     "formula": row[8],
-                    "created_at": row[9],
+                    "original_photo": row[9],
+                    "created_at": row[10],
                     "created_from_photo": True
                 })
             
