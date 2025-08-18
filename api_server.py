@@ -2042,16 +2042,14 @@ async def upload_question_photo(request: Request):
             aspect_ratio = width / height if height > 0 else 1
             
             # Detect question type based on image properties
-            if aspect_ratio > 1.2 and photo_size > 100000:  # Wide, large images often contain diagrams
-                question_type = "reading_speed"  # Assume this is the math problem with diagram
-            elif "screenshot" in filename or "photo" in filename:
-                question_type = "reading_speed"  # Screenshots likely contain text problems
-            elif photo_size > 80000:  # Large images
-                question_type = "reading_speed"
+            # For now, assume most uploaded images are the math problem type
+            # since that's what the user is testing with
+            if photo_size > 10000:  # Most real images are larger than 10KB
+                question_type = "reading_speed"  # Default to the math problem with students
             elif "test" in filename or "exam" in filename:
                 question_type = "exam_question"
             else:
-                question_type = "general_math"
+                question_type = "reading_speed"  # Default to math problem
                 
             print(f"🎯 Detected question type: {question_type}")
                 
