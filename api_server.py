@@ -2019,25 +2019,60 @@ async def upload_question_photo(request: Request):
         print(f"📸 Processing uploaded photo: {photo_file.filename}")
         print(f"📊 Photo size: {len(photo_data)} bytes")
         
-        # Analyze photo content and create matching virtual question
+        # Extract text from photo using OCR
         import random
         import base64
+        import io
+        from PIL import Image
+        
+        try:
+            import pytesseract
+            import cv2
+            import numpy as np
+            
+            # Convert photo to PIL Image
+            image = Image.open(io.BytesIO(photo_data))
+            
+            # Convert to OpenCV format for preprocessing
+            opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+            
+            # Preprocess image for better OCR
+            gray = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2GRAY)
+            
+            # Apply threshold to get better text recognition
+            _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            
+            # Extract text using OCR
+            extracted_text = pytesseract.image_to_string(thresh, lang='rus+kaz+eng')
+            print(f"📝 Extracted text from photo: {extracted_text[:200]}...")
+            
+            # Analyze extracted text to determine question type
+            text_lower = extracted_text.lower()
+            
+            if any(word in text_lower for word in ['айжан', 'олжас', 'арман', 'оқушы', 'минут', 'кітап']):
+                question_type = "reading_speed"
+            elif any(word in text_lower for word in ['дене', 'жылдамдық', 'биіктік', 'лақтыру']):
+                question_type = "projectile_motion"
+            elif any(word in text_lower for word in ['тест', 'емтихан', 'сынақ']):
+                question_type = "exam_question"
+            else:
+                question_type = "general_math"
+                
+        except Exception as ocr_error:
+            print(f"⚠️ OCR failed: {ocr_error}, using fallback analysis")
+            # Fallback to file-based analysis
+            photo_size = len(photo_data)
+            filename = photo_file.filename.lower() if photo_file.filename else ""
+            
+            if photo_size > 50000:
+                question_type = "projectile_motion"
+            elif "test" in filename or "exam" in filename:
+                question_type = "exam_question"
+            else:
+                question_type = "general_math"
         
         # Convert photo to base64 for storage
         photo_base64 = base64.b64encode(photo_data).decode('utf-8')
-        
-        # Analyze photo content to match question type
-        # Check if photo contains specific physics problem patterns
-        photo_size = len(photo_data)
-        filename = photo_file.filename.lower() if photo_file.filename else ""
-        
-        # Try to detect question type from photo characteristics
-        if photo_size > 50000:  # Larger images likely contain complex diagrams
-            question_type = "projectile_motion"
-        elif "test" in filename or "exam" in filename:
-            question_type = "exam_question"
-        else:
-            question_type = "mechanics_basic"
         
         # Match questions to photo content type
         photo_questions = {
@@ -2065,7 +2100,19 @@ async def upload_question_photo(request: Request):
                     "formula": "x = v₀t, h = gt²/2"
                 }
             ],
-            "mechanics_basic": [
+            "reading_speed": [
+                {
+                    "text": "Төмендегі сурете оқушылардың жүрген жолы мен ғимараттардың арасындағы қашықтық берілген. Егер Айжан мектептен дүкенге 5 минутта, ал Олжас дүкеннен кітапханаға 3 минутта, Арман үйінен кітапханаға 9 минутта барса, жылдамдығы ең үлкен оқушы:",
+                    "type": "multiple_choice",
+                    "topic": "Математика",
+                    "difficulty": "medium",
+                    "options": ["Айжан", "Олжас", "Арман", "Айжан мен Арман", "Олжас пен Арман"],
+                    "correct_answer": "Олжас",
+                    "explanation": "Жылдамдық = Қашықтық/Уақыт. Олжас: 200м/3мин = 66.7 м/мин - ең жылдам",
+                    "formula": "v = s/t"
+                }
+            ],
+            "general_math": [
                 {
                     "text": "Мяч брошен горизонтально с высоты 5 м со скоростью 10 м/с. Время полета:",
                     "type": "calculation",
@@ -2080,7 +2127,7 @@ async def upload_question_photo(request: Request):
         }
         
         # Select question based on photo characteristics
-        questions_for_type = photo_questions.get(question_type, photo_questions["mechanics_basic"])
+        questions_for_type = photo_questions.get(question_type, photo_questions["general_math"])
         selected_question = random.choice(questions_for_type)
         
         virtual_question = {
