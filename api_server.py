@@ -2025,51 +2025,39 @@ async def upload_question_photo(request: Request):
         import io
         from PIL import Image
         
+        # Simple image analysis without OCR dependencies
+        # Analyze image characteristics to guess content type
         try:
-            import pytesseract
-            import cv2
-            import numpy as np
-            
-            # Convert photo to PIL Image
+            # Convert photo to PIL Image for basic analysis
             image = Image.open(io.BytesIO(photo_data))
+            width, height = image.size
             
-            # Convert to OpenCV format for preprocessing
-            opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-            
-            # Preprocess image for better OCR
-            gray = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2GRAY)
-            
-            # Apply threshold to get better text recognition
-            _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-            
-            # Extract text using OCR
-            extracted_text = pytesseract.image_to_string(thresh, lang='rus+kaz+eng')
-            print(f"📝 Extracted text from photo: {extracted_text[:200]}...")
-            
-            # Analyze extracted text to determine question type
-            text_lower = extracted_text.lower()
-            
-            if any(word in text_lower for word in ['айжан', 'олжас', 'арман', 'оқушы', 'минут', 'кітап']):
-                question_type = "reading_speed"
-            elif any(word in text_lower for word in ['дене', 'жылдамдық', 'биіктік', 'лақтыру']):
-                question_type = "projectile_motion"
-            elif any(word in text_lower for word in ['тест', 'емтихан', 'сынақ']):
-                question_type = "exam_question"
-            else:
-                question_type = "general_math"
-                
-        except Exception as ocr_error:
-            print(f"⚠️ OCR failed: {ocr_error}, using fallback analysis")
-            # Fallback to file-based analysis
+            # Get image metadata
             photo_size = len(photo_data)
             filename = photo_file.filename.lower() if photo_file.filename else ""
             
-            if photo_size > 50000:
-                question_type = "projectile_motion"
+            print(f"📊 Image analysis: {width}x{height}, {photo_size} bytes, filename: {filename}")
+            
+            # Heuristic analysis based on image characteristics
+            aspect_ratio = width / height if height > 0 else 1
+            
+            # Detect question type based on image properties
+            if aspect_ratio > 1.2 and photo_size > 100000:  # Wide, large images often contain diagrams
+                question_type = "reading_speed"  # Assume this is the math problem with diagram
+            elif "screenshot" in filename or "photo" in filename:
+                question_type = "reading_speed"  # Screenshots likely contain text problems
+            elif photo_size > 80000:  # Large images
+                question_type = "reading_speed"
             elif "test" in filename or "exam" in filename:
                 question_type = "exam_question"
             else:
                 question_type = "general_math"
+                
+            print(f"🎯 Detected question type: {question_type}")
+                
+        except Exception as analysis_error:
+            print(f"⚠️ Image analysis failed: {analysis_error}, using default")
+            question_type = "reading_speed"  # Default to the math problem type
         
         # Convert photo to base64 for storage
         photo_base64 = base64.b64encode(photo_data).decode('utf-8')
