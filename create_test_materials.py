@@ -70,11 +70,16 @@ def main():
     try:
         response = requests.get(f"{API_URL}/materials")
         if response.status_code == 200:
-            data = response.json()
-            materials = data.get('materials', [])
-            print(f"Total materials in database: {len(materials)}")
-            for material in materials:
-                print(f"  - ID: {material['id']}, Title: {material['title']}")
+            materials = response.json()
+            if isinstance(materials, list):
+                print(f"Total materials in database: {len(materials)}")
+                for material in materials:
+                    print(f"  - ID: {material['id']}, Title: {material['title']}")
+            else:
+                materials = materials.get('materials', [])
+                print(f"Total materials in database: {len(materials)}")
+                for material in materials:
+                    print(f"  - ID: {material['id']}, Title: {material['title']}")
         else:
             print(f"❌ Failed to fetch materials: {response.status_code}")
     except Exception as e:

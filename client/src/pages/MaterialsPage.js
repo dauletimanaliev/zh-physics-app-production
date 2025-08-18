@@ -101,34 +101,29 @@ const MaterialsPage = () => {
       
       let materialsData = [];
       
-      // Try multiple sources to get ALL materials created by admins/teachers
+      // Try to get materials from the regular endpoint first
       try {
-        console.log('🔗 Loading ALL global materials from teachers/admins...');
+        console.log('🔗 Loading materials from /api/materials...');
         
-        // 1. Get materials from API (all published materials)
-        console.log('📚 Loading published materials from database, category:', selectedCategory);
+        const allMaterials = await apiClient.getMaterials();
+        console.log('📚 All materials response:', allMaterials);
         
-        const response = await apiClient.getMaterialsForStudent();
-        console.log('📚 API materials response:', response);
-        
-        let apiMaterials = [];
-        if (Array.isArray(response)) {
-          apiMaterials = response;
-        } else if (response && Array.isArray(response.materials)) {
-          apiMaterials = response.materials;
+        if (Array.isArray(allMaterials)) {
+          // Filter published materials
+          const publishedMaterials = allMaterials.filter(m => m.is_published === 1 || m.is_published === true);
+          console.log('📊 Found published materials:', publishedMaterials.length);
+          
+          publishedMaterials.forEach(material => {
+            const exists = materialsData.find(m => m.id === material.id);
+            if (!exists) {
+              materialsData.push(material);
+            }
+          });
         }
         
-        // Merge API materials with existing, avoiding duplicates
-        apiMaterials.forEach(apiMaterial => {
-          const exists = materialsData.find(m => m.id === apiMaterial.id);
-          if (!exists) {
-            materialsData.push(apiMaterial);
-          }
-        });
-        
-        console.log('📊 Total materials loaded from all sources:', materialsData.length);
+        console.log('📊 Total materials loaded:', materialsData.length);
       } catch (error) {
-        console.error('❌ Error loading materials:', error);
+        console.error('❌ Error loading materials from /api/materials:', error);
       }
       
       // Get user data from localStorage and AuthContext
@@ -139,19 +134,12 @@ const MaterialsPage = () => {
       // Load published materials for student (only published materials)
       const category = selectedCategory === 'all' ? null : selectedCategory;
       
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('API timeout')), 10000)
-      );
+      // Skip the problematic endpoint for now
+      console.log('⏭️ Skipping getMaterialsForStudent due to server issues');
       
-      const materialsPromise = apiClient.getMaterialsForStudent(userId, category);
-      const publishedMaterials = await Promise.race([materialsPromise, timeoutPromise]);
-      
-      console.log('✅ Published materials loaded:', publishedMaterials);
-      
-      // Transform API data to our format if we have data from old API
-      if (publishedMaterials && publishedMaterials.length > 0 && !materialsData.length) {
-        materialsData = publishedMaterials.map(item => ({
+      // Transform API data to our format if we have data
+      if (materialsData.length > 0) {
+        materialsData = materialsData.map(item => ({
         id: item.id,
         title: item.title,
         description: item.description,

@@ -207,10 +207,10 @@ const StudentDashboard = () => {
             <p>Проверь знания</p>
           </div>
           
-          <div className="action-card" onClick={() => window.location.href = '/schedule'}>
+          <div className="action-card" onClick={() => window.navigateTo('schedule')}>
             <div className="action-icon">📅</div>
             <h3>Расписание</h3>
-            <p>Планируй время</p>
+            <p>Смотри занятия учителей</p>
           </div>
           
           <div className="action-card" onClick={() => window.location.href = '/leaderboard'}>

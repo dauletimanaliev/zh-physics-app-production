@@ -20,7 +20,11 @@ class User(BaseModel):
     telegram_id: int
     first_name: str
     username: Optional[str] = None
+    last_name: Optional[str] = None
+    birth_date: Optional[str] = None
+    language: Optional[str] = 'ru'
     role: Optional[str] = 'student'
+    registration_date: Optional[str] = None
 
 class TestAnswer(BaseModel):
     test_id: int
@@ -236,11 +240,11 @@ async def create_user(user: User):
     try:
         await db.add_user(
             telegram_id=user.telegram_id,
-            username=user.username,
+            username=getattr(user, 'username', None),
             first_name=user.first_name,
             last_name=getattr(user, 'last_name', None),
             birth_date=getattr(user, 'birth_date', None),
-            language=user.language,
+            language=getattr(user, 'language', 'ru'),
             role=getattr(user, 'role', 'student'),
             registration_date=getattr(user, 'registration_date', None)
         )
@@ -248,7 +252,8 @@ async def create_user(user: User):
     except Exception as e:
         print(f"❌ User creation error: {e}")
         print(f"📜 Traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=400, detail="Failed to create user")
+        print(f"📋 User data received: {user}")
+        raise HTTPException(status_code=400, detail=f"Failed to create user: {str(e)}")
 
 @app.get("/api/users/{telegram_id}")
 async def get_user(telegram_id: int):
@@ -351,6 +356,96 @@ async def get_all_materials():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/materials/published")
+async def get_published_materials(user_id: Optional[int] = None, category: Optional[str] = None):
+    """Get all published materials for students"""
+    try:
+        print(f"📚 Loading published materials for student, category: {category}")
+        
+        # Get all materials from database with error handling
+        try:
+            materials = await db.get_all_materials()
+            print(f"📊 Found {len(materials)} total materials in database")
+        except Exception as db_error:
+            print(f"❌ Database error getting materials: {db_error}")
+            print(f"📜 Database error traceback: {traceback.format_exc()}")
+            # Return empty list if database fails
+            return []
+        
+        if not materials:
+            print("📭 No materials found in database")
+            return []
+        
+        # Filter only published materials
+        published_materials = []
+        for m in materials:
+            is_published = m.get('is_published')
+            print(f"🔍 Material {m.get('id')}: {m.get('title')} - is_published: {is_published} (type: {type(is_published)})")
+            if is_published == 1 or is_published is True:
+                published_materials.append(m)
+        
+        # Filter by category if specified
+        if category and category != 'all':
+            published_materials = [m for m in published_materials if m.get('category') == category]
+        
+        print(f"✅ Found {len(published_materials)} published materials")
+        return published_materials
+    except Exception as e:
+        print(f"❌ Error loading published materials: {e}")
+        print(f"📜 Full traceback: {traceback.format_exc()}")
+        # Return empty list instead of raising error
+        return []
+
+# User progress and bookmarks endpoints
+@app.get("/api/users/{user_id}/progress")
+async def get_user_progress(user_id: int):
+    """Get user progress stats"""
+    try:
+        user = await db.get_user_by_id(user_id)
+        if not user:
+            return {"experience": 0, "nextLevelExp": 1000, "level": 1}
+        
+        return {
+            "experience": user.get('points', 0),
+            "nextLevelExp": 1000,
+            "level": user.get('level', 1),
+            "testsCompleted": user.get('tests_completed', 0),
+            "avgScore": user.get('avg_score', 0)
+        }
+    except Exception as e:
+        print(f"❌ Error loading user progress: {e}")
+        return {"experience": 0, "nextLevelExp": 1000, "level": 1}
+
+@app.get("/api/users/{user_id}/bookmarks")
+async def get_user_bookmarks(user_id: int):
+    """Get user bookmarks"""
+    try:
+        # For now return empty array, can implement later
+        return []
+    except Exception as e:
+        print(f"❌ Error loading user bookmarks: {e}")
+        return []
+
+@app.post("/api/users/{user_id}/bookmarks")
+async def add_bookmark(user_id: int, data: Dict[str, Any]):
+    """Add bookmark for user"""
+    try:
+        # For now just return success, can implement later
+        return {"success": True}
+    except Exception as e:
+        print(f"❌ Error adding bookmark: {e}")
+        return {"success": False}
+
+@app.delete("/api/users/{user_id}/bookmarks/{material_id}")
+async def remove_bookmark(user_id: int, material_id: int):
+    """Remove bookmark for user"""
+    try:
+        # For now just return success, can implement later
+        return {"success": True}
+    except Exception as e:
+        print(f"❌ Error removing bookmark: {e}")
+        return {"success": False}
+
 @app.get("/api/materials/{material_id}")
 async def get_material_by_id(material_id: int):
     """Get material by ID"""
@@ -446,15 +541,15 @@ async def create_schedule(schedule_data: Dict[str, Any]):
     try:
         print(f"📅 Creating schedule: {schedule_data.get('title', 'Unknown')}")
         
-        # Extract data from request
+        # Extract data from request - handle both camelCase and snake_case
         title = schedule_data.get('title', '')
         description = schedule_data.get('description', '')
         subject = schedule_data.get('subject', 'Физика')
-        day_of_week = schedule_data.get('dayOfWeek', 'monday')
-        start_time = schedule_data.get('startTime', '')
-        end_time = schedule_data.get('endTime', '')
-        start_date = schedule_data.get('startDate', '')
-        end_date = schedule_data.get('endDate', '')
+        day_of_week = schedule_data.get('dayOfWeek') or schedule_data.get('day_of_week', 'monday')
+        start_time = schedule_data.get('startTime') or schedule_data.get('start_time', '')
+        end_time = schedule_data.get('endTime') or schedule_data.get('end_time', '')
+        start_date = schedule_data.get('startDate') or schedule_data.get('start_date', '')
+        end_date = schedule_data.get('endDate') or schedule_data.get('end_date', '')
         location = schedule_data.get('location', '')
         max_students = schedule_data.get('maxStudents', 30)
         teacher_id = schedule_data.get('teacherId', 1)
@@ -786,6 +881,30 @@ async def get_all_users():
         users = await db.get_all_users()
         return {"users": users}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/teacher/students")
+async def get_teacher_students_by_code():
+    """Get all students registered with teacher code 111444"""
+    try:
+        users = await db.get_all_users()
+        # Filter students with code 111444
+        students = [user for user in users if user.get('role') == 'student' and user.get('code') == '111444']
+        
+        # Add additional stats for each student
+        for student in students:
+            student['tests_completed'] = student.get('tests_completed', 0)
+            student['points'] = student.get('points', 0)
+            student['last_activity'] = student.get('last_activity', 'Никогда')
+            student['registration_date'] = student.get('registration_date', 'Неизвестно')
+        
+        return {
+            "students": students,
+            "total_count": len(students),
+            "active_count": len([s for s in students if s.get('points', 0) > 0])
+        }
+    except Exception as e:
+        print(f"❌ Error getting teacher students: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/admin/stats")

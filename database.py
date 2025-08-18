@@ -163,14 +163,35 @@ class Database:
             
             await db.commit()
     
-    async def add_user(self, telegram_id: int, username: str = None, first_name: str = None, language: str = 'ru'):
+    async def add_user(self, telegram_id: int, username: str = None, first_name: str = None, last_name: str = None, birth_date: str = None, language: str = 'ru', role: str = 'student', registration_date: str = None):
         """Add new user or update existing"""
         async with aiosqlite.connect(self.db_path) as db:
+            # Check if role and birth_date columns exist, if not add them
+            cursor = await db.execute("PRAGMA table_info(users)")
+            columns = await cursor.fetchall()
+            column_names = [col[1] for col in columns]
+            
+            if 'role' not in column_names:
+                await db.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'student'")
+                print("✅ Added role column to users table")
+            
+            if 'birth_date' not in column_names:
+                await db.execute("ALTER TABLE users ADD COLUMN birth_date TEXT")
+                print("✅ Added birth_date column to users table")
+            
+            if 'code' not in column_names:
+                await db.execute("ALTER TABLE users ADD COLUMN code TEXT")
+                print("✅ Added code column to users table")
+            
+            # Set code to 111444 for students
+            code = '111444' if role == 'student' else None
+            
             await db.execute("""
-                INSERT OR REPLACE INTO users (telegram_id, username, first_name, language)
-                VALUES (?, ?, ?, ?)
-            """, (telegram_id, username, first_name, language))
+                INSERT OR REPLACE INTO users (telegram_id, username, first_name, last_name, birth_date, language, role, code, registration_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (telegram_id, username, first_name, last_name, birth_date, language, role, code, registration_date))
             await db.commit()
+            print(f"✅ User {telegram_id} saved with role {role} and code {code}")
     
     async def get_user(self, telegram_id: int) -> Optional[Dict]:
         """Get user by telegram_id"""
@@ -520,46 +541,81 @@ class Database:
 
     async def get_all_materials(self) -> List[Dict]:
         """Get all materials (published and unpublished)"""
-        async with aiosqlite.connect(self.db_path) as db:
-            db.row_factory = aiosqlite.Row
-            
-            async with db.execute("""
-                SELECT id, title, description, content, type, category, difficulty, 
-                       duration, is_published, tags, video_url as videoUrl, 
-                       pdf_url as pdfUrl, thumbnail_url as thumbnailUrl, teacher_id as teacherId,
-                       attachments, created_at, updated_at
-                FROM materials 
-                ORDER BY created_at DESC
-            """) as cursor:
-                rows = await cursor.fetchall()
-                materials = []
-                for row in rows:
-                    material = dict(row)
-                    # Parse tags from JSON
-                    if material['tags']:
-                        try:
-                            material['tags'] = json.loads(material['tags'])
-                        except:
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                db.row_factory = aiosqlite.Row
+                
+                # Check if materials table exists
+                async with db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='materials'") as cursor:
+                    table_exists = await cursor.fetchone()
+                    if not table_exists:
+                        print("⚠️ Materials table does not exist, creating it...")
+                        await self.create_materials_table(db)
+                        return []
+                
+                async with db.execute("""
+                    SELECT id, title, description, content, type, category, difficulty, 
+                           duration, is_published, tags, video_url as videoUrl, 
+                           pdf_url as pdfUrl, thumbnail_url as thumbnailUrl, teacher_id as teacherId,
+                           attachments, created_at, updated_at
+                    FROM materials 
+                    ORDER BY created_at DESC
+                """) as cursor:
+                    rows = await cursor.fetchall()
+                    materials = []
+                    for row in rows:
+                        material = dict(row)
+                        # Parse tags from JSON
+                        if material.get('tags'):
+                            try:
+                                material['tags'] = json.loads(material['tags'])
+                            except:
+                                material['tags'] = []
+                        else:
                             material['tags'] = []
-                    else:
-                        material['tags'] = []
-                    
-                    # Parse attachments from JSON
-                    if material.get('attachments'):
-                        try:
-                            material['attachments'] = json.loads(material['attachments'])
-                        except:
+                        
+                        # Parse attachments from JSON
+                        if material.get('attachments'):
+                            try:
+                                material['attachments'] = json.loads(material['attachments'])
+                            except:
+                                material['attachments'] = []
+                        else:
                             material['attachments'] = []
-                    else:
-                        material['attachments'] = []
-                    
-                    materials.append(material)
-                return materials
+                        
+                        materials.append(material)
+                    return materials
+        except Exception as e:
+            print(f"❌ Error in get_all_materials: {e}")
+            return []
 
-            # Reset auto-increment sequence
-            await db.execute("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'materials'")
-            await db.commit()
-            print("✅ All materials cleared and sequence reset")
+    async def create_materials_table(self, db):
+        """Create materials table if it doesn't exist"""
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS materials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT,
+                content TEXT,
+                type TEXT DEFAULT 'text',
+                category TEXT,
+                difficulty TEXT DEFAULT 'medium',
+                duration INTEGER DEFAULT 30,
+                is_published INTEGER DEFAULT 0,
+                tags TEXT,
+                video_url TEXT,
+                pdf_url TEXT,
+                thumbnail_url TEXT,
+                teacher_id INTEGER,
+                attachments TEXT,
+                subject TEXT DEFAULT 'Физика',
+                language TEXT DEFAULT 'ru',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await db.commit()
+        print("✅ Materials table created")
 
     async def get_material_by_id(self, material_id: int) -> Optional[Dict]:
         """Get material by ID"""

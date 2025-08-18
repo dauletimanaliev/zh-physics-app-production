@@ -79,14 +79,14 @@ const QuickActionsPage = () => {
       }
     },
     {
-      id: 'view-reports',
+      id: 'view-analytics',
       title: 'Посмотреть отчеты',
-      subtitle: 'Аналитика класса',
+      subtitle: 'Аналитика учеников',
       icon: '📊',
       color: '#8b5cf6',
       action: () => {
         if (window.navigateTo) {
-          window.navigateTo('admin');
+          window.navigateTo('teacher-analytics');
         }
       }
     },

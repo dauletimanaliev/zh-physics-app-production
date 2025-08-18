@@ -17,7 +17,9 @@ import MaterialsPage from './pages/MaterialsPage';
 import MaterialPage from './pages/MaterialPage';
 import MaterialManagement from './pages/teacher/MaterialManagement';
 import StudentList from './pages/teacher/StudentList';
-import ScheduleManager from './pages/ScheduleManager';
+import ScheduleManagement from './pages/teacher/ScheduleManagement_complete';
+import TeacherAnalytics from './pages/TeacherAnalytics';
+import StudentScheduleView from './pages/StudentScheduleView';
 import DirectorDashboard from './pages/DirectorDashboard';
 import ProfilePage from './pages/ProfilePage';
 import StudentManagementPage from './pages/StudentManagementPage';
@@ -128,7 +130,7 @@ function App() {
         case 'tests':
           return <TestsPage />;
         case 'schedule':
-          return <SchedulePage />;
+          return <StudentScheduleView />;
         case 'leaderboard':
           return <LeaderboardPage />;
         case 'quests':
@@ -148,6 +150,10 @@ function App() {
       switch (currentPage) {
         case 'home':
           return <QuickActionsPage />;
+        case 'quick-actions':
+          return <QuickActionsPage />;
+        case 'teacher-analytics':
+          return <TeacherAnalytics />;
         case 'admin':
           return <AdminPanel />;
         case 'students':
@@ -155,7 +161,7 @@ function App() {
         case 'materials':
           return <MaterialManagement />;
         case 'schedule':
-          return <ScheduleManager />;
+          return <ScheduleManagement />;
         case 'material':
           return <MaterialPage materialId={materialId} navigateTo={navigateTo} />;
         case 'tests':
@@ -333,11 +339,11 @@ function App() {
                 <span>Главная</span>
               </button>
               <button
-                onClick={() => navigateTo('admin')}
+                onClick={() => navigateTo('quick-actions')}
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: currentPage === 'admin' ? 'white' : 'rgba(255, 255, 255, 0.6)',
+                  color: currentPage === 'quick-actions' ? 'white' : 'rgba(255, 255, 255, 0.6)',
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',

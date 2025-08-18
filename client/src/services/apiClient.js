@@ -2,7 +2,7 @@ import axios from 'axios';
 
 class ApiClient {
   constructor() {
-    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+    const baseURL = process.env.REACT_APP_API_URL || 'https://web-production-2678c.up.railway.app/api';
     
     this.client = axios.create({
       baseURL,
@@ -39,22 +39,23 @@ class ApiClient {
     }
   }
 
-  // User methods
+  // Auth methods
   async createUser(userData) {
     console.log('Creating user with data:', userData);
     return this.request('/users', 'POST', userData);
+  }
+
+  async logoutUser(userId) {
+    return this.request(`/user/${userId}/logout`, 'DELETE');
   }
 
   async getUser(userId) {
     return this.request(`/users/${userId}`);
   }
 
+  // User methods
   async updateUser(userId, userData) {
     return this.request(`/users/${userId}`, 'PUT', userData);
-  }
-
-  async logoutUser(userId) {
-    return this.request(`/users/${userId}/logout`, 'POST');
   }
 
   // Materials methods
@@ -85,6 +86,34 @@ class ApiClient {
 
   async getTeacherMaterials(teacherId) {
     return this.request(`/materials/teacher/${teacherId}`);
+  }
+
+  async getMaterialsForStudent(userId = null, category = null) {
+    const params = {};
+    if (userId) params.user_id = userId;
+    if (category) params.category = category;
+    return this.request('/materials/published', 'GET', null, params);
+  }
+
+  async getUserProgress(userId) {
+    return this.request(`/users/${userId}/progress`);
+  }
+
+  async getUserBookmarks(userId) {
+    return this.request(`/users/${userId}/bookmarks`);
+  }
+
+  async addBookmark(userId, materialId) {
+    return this.request(`/users/${userId}/bookmarks`, 'POST', { material_id: materialId });
+  }
+
+  async removeBookmark(userId, materialId) {
+    return this.request(`/users/${userId}/bookmarks/${materialId}`, 'DELETE');
+  }
+
+  // Teacher methods
+  async getTeacherStudents() {
+    return this.request('/teacher/students');
   }
 
   // Tests methods
@@ -172,12 +201,18 @@ class ApiClient {
   }
 
   async getUserSchedules(userId) {
-    return this.request(`/schedules/user/${userId}`);
+    console.log('🔍 API: Getting schedules for user:', userId);
+    const result = await this.request(`/schedules/user/${userId}`);
+    console.log('🔍 API: Schedules response:', result);
+    return result;
   }
 
   async getPublicSchedules(userId = null) {
+    console.log('🔍 API: Getting all public schedules...');
     const url = userId ? `/schedules/public?user_id=${userId}` : '/schedules/public';
-    return this.request(url);
+    const result = await this.request(url);
+    console.log('🔍 API: Public schedules response:', result);
+    return result;
   }
 
   async getScheduleDetails(scheduleId) {
@@ -190,6 +225,10 @@ class ApiClient {
 
   async updateScheduleVisibility(scheduleId, visibility) {
     return this.request(`/schedules/${scheduleId}/visibility`, 'PUT', { visibility });
+  }
+
+  async updateSchedule(scheduleId, scheduleData) {
+    return this.request(`/schedules/${scheduleId}`, 'PUT', scheduleData);
   }
 
   async deleteSchedule(scheduleId) {

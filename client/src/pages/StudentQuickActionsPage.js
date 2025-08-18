@@ -104,6 +104,18 @@ const StudentQuickActionsPage = () => {
       }
     },
     {
+      id: 'schedule',
+      title: 'Расписание занятий',
+      subtitle: 'Смотри занятия учителей',
+      icon: '📅',
+      color: '#06b6d4',
+      action: () => {
+        if (window.navigateTo) {
+          window.navigateTo('schedule');
+        }
+      }
+    },
+    {
       id: 'daily-quest',
       title: 'Ежедневный квест',
       subtitle: dailyQuest ? `${dailyQuest.progress}/${dailyQuest.maxProgress} выполнено` : 'Загрузка...',
