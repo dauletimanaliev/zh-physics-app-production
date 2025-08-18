@@ -68,6 +68,14 @@ const StudentQuickActionsPage = () => {
 
   const quickActions = [
     {
+      id: 'physics-test',
+      title: 'ИИ Тесты по Физике',
+      subtitle: 'Умные вопросы с ИИ',
+      icon: '🤖',
+      color: '#3b82f6',
+      action: () => navigateTo('physics-test')
+    },
+    {
       id: 'take-test',
       title: 'Пройти тест',
       subtitle: 'Проверить знания',

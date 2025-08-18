@@ -303,6 +303,34 @@ class ApiClient {
   async getRealSystemStats() {
     return this.request('/system/real-stats');
   }
+
+  // AI Physics Question Generation
+  async generatePhysicsQuestion() {
+    return this.request('/ai/generate-question', 'POST');
+  }
+
+  // Check Physics Answer with AI
+  async checkPhysicsAnswer(answerData) {
+    return this.request('/ai/check-answer', 'POST', answerData);
+  }
+
+  // Upload photo and convert to virtual question
+  async uploadQuestionPhoto(photoFile) {
+    const formData = new FormData();
+    formData.append('photo', photoFile);
+    
+    const response = await fetch(`${this.client.defaults.baseURL}/ai/upload-question-photo`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    return response.json();
+  }
+
+  // Get all virtual questions created from photos
+  async getVirtualQuestions() {
+    return this.request('/ai/virtual-questions', 'GET');
+  }
 }
 
 const apiClient = new ApiClient();

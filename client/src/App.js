@@ -18,7 +18,7 @@ import MaterialPage from './pages/MaterialPage';
 import MaterialManagement from './pages/teacher/MaterialManagement';
 import StudentList from './pages/teacher/StudentList';
 import ScheduleManagement from './pages/teacher/ScheduleManagement_complete';
-import TeacherAnalytics from './pages/TeacherAnalytics';
+import PhysicsTestSystem from './pages/PhysicsTestSystem';
 import StudentScheduleView from './pages/StudentScheduleView';
 import DirectorDashboard from './pages/DirectorDashboard';
 import ProfilePage from './pages/ProfilePage';
@@ -129,6 +129,8 @@ function App() {
           return <MaterialPage materialId={materialId} navigateTo={navigateTo} />;
         case 'tests':
           return <TestsPage />;
+        case 'physics-test':
+          return <PhysicsTestSystem />;
         case 'schedule':
           return <StudentScheduleView />;
         case 'leaderboard':
@@ -152,8 +154,8 @@ function App() {
           return <QuickActionsPage />;
         case 'quick-actions':
           return <QuickActionsPage />;
-        case 'teacher-analytics':
-          return <TeacherAnalytics />;
+        case 'physics-test':
+          return <PhysicsTestSystem />;
         case 'admin':
           return <AdminPanel />;
         case 'students':

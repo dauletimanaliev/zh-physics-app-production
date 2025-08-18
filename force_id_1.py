@@ -2,40 +2,55 @@
 import requests
 import json
 
-def create_material_with_id_1():
-    """Попытка создать материал с ID 1 через API"""
+API_BASE = "https://web-production-2678c.up.railway.app/api"
+
+def force_create_user():
+    """Force create user with specific ID and code"""
     
-    # Сначала проверим что база пустая
-    response = requests.get('https://web-production-2678c.up.railway.app/api/materials')
-    materials = response.json().get('materials', [])
-    print(f"📊 Материалов в базе: {len(materials)}")
-    
-    # Создадим материал
-    material_data = {
-        "title": "Первый материал",
-        "description": "Материал с ID 1",
-        "subject": "Физика", 
-        "grade": "10",
-        "teacher": "Учитель",
-        "tags": ["физика", "первый"],
-        "attachments": [],
-        "isPublished": 1
+    user_data = {
+        "telegram_id": 1111444,
+        "username": "test_student_code", 
+        "first_name": "Студент",
+        "last_name": "Код111444",
+        "language": "ru",
+        "role": "student"
     }
     
-    response = requests.post(
-        'https://web-production-2678c.up.railway.app/api/materials',
-        headers={'Content-Type': 'application/json'},
-        data=json.dumps(material_data)
-    )
-    
-    if response.status_code == 200:
-        result = response.json()
-        material_id = result.get('material_id')
-        print(f"✅ Материал создан с ID: {material_id}")
-        return material_id
-    else:
-        print(f"❌ Ошибка создания материала: {response.text}")
-        return None
+    try:
+        print(f"🧪 Creating user with special ID for code testing...")
+        
+        response = requests.post(
+            f"{API_BASE}/users", 
+            json=user_data,
+            timeout=10,
+            headers={'Content-Type': 'application/json'}
+        )
+        
+        print(f"📊 Status: {response.status_code}")
+        print(f"📋 Response: {response.text}")
+        
+        if response.status_code == 200:
+            print(f"✅ User created successfully!")
+            
+            # Check teacher analytics immediately
+            print("\n🔍 Checking teacher analytics...")
+            analytics_response = requests.get(f"{API_BASE}/teacher/students", timeout=10)
+            print(f"Analytics Status: {analytics_response.status_code}")
+            
+            if analytics_response.status_code == 200:
+                data = analytics_response.json()
+                students = data.get('students', [])
+                print(f"👥 Found {len(students)} students with code 111444")
+                
+                for student in students:
+                    print(f"  - {student.get('first_name')} {student.get('last_name')} (Code: {student.get('code')})")
+            else:
+                print(f"❌ Analytics error: {analytics_response.text}")
+        else:
+            print(f"❌ Failed to create user")
+            
+    except Exception as e:
+        print(f"💥 Error: {e}")
 
 if __name__ == "__main__":
-    create_material_with_id_1()
+    force_create_user()

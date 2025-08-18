@@ -94,6 +94,18 @@ const TeacherAnalytics = () => {
       <div className="students-section">
         <h2>Список учеников</h2>
         
+        <div className="debug-info" style={{padding: '10px', background: 'rgba(255,255,255,0.2)', margin: '10px 0', borderRadius: '5px', color: 'white'}}>
+          <p>Загружено студентов: {students.length}</p>
+          <p>Общее количество: {totalCount}</p>
+          <p>Активных: {activeCount}</p>
+          <details style={{marginTop: '10px'}}>
+            <summary>Данные студентов (для отладки)</summary>
+            <pre style={{fontSize: '12px', overflow: 'auto', maxHeight: '200px'}}>
+              {JSON.stringify(students, null, 2)}
+            </pre>
+          </details>
+        </div>
+        
         {students.length === 0 ? (
           <div className="no-students">
             <p>Пока нет учеников с кодом 111444</p>
@@ -101,28 +113,28 @@ const TeacherAnalytics = () => {
         ) : (
           <div className="students-list">
             {students.map((student, index) => {
-              const activity = getActivityStatus(student.points);
+              const activity = getActivityStatus(student.points || 0);
               
               return (
-                <div key={student.telegram_id || index} className="student-card">
+                <div key={`student-${student.telegram_id}-${index}`} className="student-card">
                   <div className="student-avatar">
                     <span>{student.first_name?.[0] || '?'}</span>
                   </div>
                   
                   <div className="student-info">
-                    <h3>{student.first_name} {student.last_name || ''}</h3>
+                    <h3>{student.first_name || 'Неизвестно'} {student.last_name || ''}</h3>
                     <p className="student-username">@{student.username || 'без_username'}</p>
                     <p className="student-date">Регистрация: {formatDate(student.registration_date)}</p>
                   </div>
                   
                   <div className="student-stats">
                     <div className="stat">
-                      <span className="stat-value">{student.points}</span>
+                      <span className="stat-value">{student.points || 0}</span>
                       <span className="stat-label">Баллы</span>
                     </div>
                     
                     <div className="stat">
-                      <span className="stat-value">{student.tests_completed}</span>
+                      <span className="stat-value">{student.tests_completed || 0}</span>
                       <span className="stat-label">Тесты</span>
                     </div>
                     

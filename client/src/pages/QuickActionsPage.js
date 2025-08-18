@@ -55,6 +55,14 @@ const QuickActionsPage = () => {
       }
     },
     {
+      id: 'physics-test',
+      title: 'ИИ Тесты по Физике',
+      subtitle: 'Генерация вопросов с ИИ',
+      icon: '🤖',
+      color: '#10b981',
+      action: () => navigateTo('physics-test')
+    },
+    {
       id: 'add-material',
       title: 'Добавить материал',
       subtitle: 'Загрузить урок',
