@@ -155,52 +155,49 @@ const PhotoQuestionUpload = ({ onQuestionCreated }) => {
         </div>
       ) : (
         <div className="processed-question">
-          <div className="success-header">
-            <div className="success-icon">✅</div>
-            <h3>Фото успешно обработано ИИ!</h3>
-            <p>Виртуальная задача создана и готова к решению</p>
-          </div>
-
-          <div className="virtual-question-preview">
+          <h3>🤖 Виртуальная задача создана!</h3>
+          <div className="question-card">
+            {processedQuestion.original_photo && (
+              <div className="original-photo-display">
+                <h4>📸 Загруженное изображение:</h4>
+                <img 
+                  src={processedQuestion.original_photo} 
+                  alt="Загруженная задача" 
+                  className="uploaded-image-display"
+                />
+              </div>
+            )}
             <div className="question-header">
-              <span className="question-topic">{processedQuestion.topic}</span>
-              <span className="question-difficulty">{processedQuestion.difficulty}</span>
+              <span className="topic-badge">{processedQuestion.topic}</span>
+              <span className="difficulty-badge">{processedQuestion.difficulty}</span>
             </div>
-            
-            <div className="question-text">
-              <h4>{processedQuestion.text}</h4>
-            </div>
-
+            <p className="question-text">{processedQuestion.text}</p>
             {processedQuestion.formula && (
-              <div className="question-formula">
+              <div className="formula-box">
                 <code>{processedQuestion.formula}</code>
               </div>
             )}
-
-            <div className="question-options">
-              {processedQuestion.options.map((option, index) => (
-                <div key={index} className="option-preview">
+            <div className="options-list">
+              {processedQuestion.options?.map((option, index) => (
+                <div key={index} className="option-item">
                   {String.fromCharCode(65 + index)}. {option}
                 </div>
               ))}
             </div>
-
-            <div className="correct-answer">
-              <strong>Правильный ответ:</strong> {processedQuestion.correct_answer}
+            <div className="answer-section">
+              <strong>Правильный ответ: {processedQuestion.correct_answer}</strong>
+              {processedQuestion.explanation && (
+                <p className="explanation">{processedQuestion.explanation}</p>
+              )}
             </div>
-
-            <div className="explanation">
-              <strong>Объяснение:</strong> {processedQuestion.explanation}
-            </div>
-          </div>
-
-          <div className="processed-actions">
-            <button onClick={clearSelection} className="new-photo-btn">
-              📸 Загрузить новое фото
-            </button>
           </div>
         </div>
       )}
+      <div className="processed-actions">
+        <button onClick={clearSelection} className="new-photo-btn">
+          📸 Загрузить новое фото
+        </button>
+      </div>
 
       {uploadedQuestions.length > 0 && (
         <div className="uploaded-questions">
@@ -208,15 +205,24 @@ const PhotoQuestionUpload = ({ onQuestionCreated }) => {
           <div className="questions-grid">
             {uploadedQuestions.slice(0, 6).map((question, index) => (
               <div key={question.id} className="question-card">
+                {question.original_photo && (
+                  <div className="original-photo-display">
+                    <img 
+                      src={question.original_photo} 
+                      alt="Загруженная задача" 
+                      className="uploaded-image-display"
+                    />
+                  </div>
+                )}
                 <div className="card-header">
                   <span className="card-topic">{question.topic}</span>
                   <span className="card-difficulty">{question.difficulty}</span>
                 </div>
-                <div className="card-text">
-                  {question.text.substring(0, 80)}...
-                </div>
+                <p className="card-text">
+                  {question.text?.substring(0, 100)}...
+                </p>
                 <div className="card-footer">
-                  <span className="created-badge">📸 Из фото</span>
+                  <span className="created-badge">✅ Создано из фото</span>
                 </div>
               </div>
             ))}

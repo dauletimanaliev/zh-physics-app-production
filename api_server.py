@@ -2126,7 +2126,7 @@ async def upload_question_photo(request: Request):
             "correct_answer": selected_question["correct_answer"],
             "explanation": selected_question["explanation"],
             "formula": selected_question["formula"],
-            "original_photo": f"data:image/jpeg;base64,{photo_base64[:200]}...",
+            "original_photo": f"data:image/jpeg;base64,{photo_base64}",
             "created_from_photo": True
         }
         
