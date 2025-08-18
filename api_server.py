@@ -1787,6 +1787,7 @@ async def generate_physics_question():
     """Generate AI-powered physics question with visual elements"""
     try:
         import random
+        import json
         
         # Expanded physics questions with diverse topics
         sample_questions = [
@@ -2020,6 +2021,7 @@ async def upload_question_photo(request: Request):
         
         # For now, simulate AI processing and return a virtual question
         # In real implementation, you would use OCR + AI to extract text
+        import random
         virtual_question = {
             "id": random.randint(10000, 99999),
             "text": "Дене 2 м биіктіктен 2 м/с жылдамдықпен көлденең лақтырылды. Дене 60 м үйдің жанынан толық өтіп кету үшін кететін уақыт:",
