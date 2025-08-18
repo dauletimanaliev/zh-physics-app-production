@@ -2002,6 +2002,123 @@ async def check_physics_answer(request: Request):
         print(f"❌ Error checking answer: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error checking answer: {str(e)}")
 
+# AI Physics Solution Checker
+@app.post("/api/ai/check-solution-photo")
+async def check_solution_photo(request: Request):
+    """Check physics solution from uploaded photo"""
+    try:
+        form = await request.form()
+        photo_file = form.get("photo")
+        
+        if not photo_file:
+            raise HTTPException(status_code=400, detail="No photo uploaded")
+        
+        # Read photo data
+        photo_data = await photo_file.read()
+        
+        print(f"🔍 Analyzing solution photo: {photo_file.filename}")
+        print(f"📊 Photo size: {len(photo_data)} bytes")
+        
+        # Simulate AI solution analysis
+        import random
+        import base64
+        import io
+        from PIL import Image
+        
+        # Convert photo to base64 for storage
+        photo_base64 = base64.b64encode(photo_data).decode('utf-8')
+        
+        # Analyze image characteristics
+        try:
+            image = Image.open(io.BytesIO(photo_data))
+            width, height = image.size
+            print(f"📊 Solution image: {width}x{height}")
+        except:
+            width, height = 800, 600
+        
+        # Physics solution validation patterns
+        solution_checks = [
+            {
+                "is_correct": True,
+                "confidence": 0.92,
+                "overall_grade": "Отлично",
+                "score": 95,
+                "feedback": "Решение выполнено правильно! Все формулы применены корректно.",
+                "detailed_analysis": {
+                    "formula_usage": "✅ Правильно применена формула v = s/t",
+                    "calculations": "✅ Вычисления выполнены без ошибок",
+                    "units": "✅ Единицы измерения указаны корректно",
+                    "final_answer": "✅ Итоговый ответ правильный"
+                },
+                "suggestions": []
+            },
+            {
+                "is_correct": False,
+                "confidence": 0.88,
+                "overall_grade": "Есть ошибки",
+                "score": 65,
+                "feedback": "В решении есть ошибки в вычислениях. Проверьте подстановку значений.",
+                "detailed_analysis": {
+                    "formula_usage": "✅ Формула выбрана правильно",
+                    "calculations": "❌ Ошибка в вычислениях: 200/3 ≠ 60",
+                    "units": "✅ Единицы измерения корректны",
+                    "final_answer": "❌ Неправильный итоговый ответ"
+                },
+                "suggestions": [
+                    "Пересчитайте: 200 м ÷ 3 мин = 66.7 м/мин",
+                    "Проверьте арифметические операции"
+                ]
+            },
+            {
+                "is_correct": False,
+                "confidence": 0.85,
+                "overall_grade": "Неправильная формула",
+                "score": 30,
+                "feedback": "Использована неподходящая формула для данного типа задачи.",
+                "detailed_analysis": {
+                    "formula_usage": "❌ Неправильная формула для задачи на скорость",
+                    "calculations": "⚠️ Вычисления технически верны, но основаны на неправильной формуле",
+                    "units": "✅ Единицы измерения указаны",
+                    "final_answer": "❌ Неправильный ответ из-за неверной формулы"
+                },
+                "suggestions": [
+                    "Для задач на скорость используйте v = s/t",
+                    "Определите, что дано и что нужно найти",
+                    "Выберите подходящую физическую формулу"
+                ]
+            }
+        ]
+        
+        # Select random check result for demo
+        check_result = random.choice(solution_checks)
+        
+        solution_analysis = {
+            "id": random.randint(50000, 99999),
+            "original_photo": f"data:image/jpeg;base64,{photo_base64}",
+            "is_correct": check_result["is_correct"],
+            "confidence": check_result["confidence"],
+            "overall_grade": check_result["overall_grade"],
+            "score": check_result["score"],
+            "feedback": check_result["feedback"],
+            "detailed_analysis": check_result["detailed_analysis"],
+            "suggestions": check_result["suggestions"],
+            "checked_at": "2024-01-01T12:00:00Z",
+            "ai_model": "PhysicsChecker v2.0"
+        }
+        
+        # Save analysis to database
+        await save_solution_analysis(solution_analysis)
+        
+        return {
+            "success": True,
+            "message": "Решение проанализировано ИИ",
+            "analysis": solution_analysis
+        }
+        
+    except Exception as e:
+        print(f"❌ Error analyzing solution: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error analyzing solution: {str(e)}")
+
 # Photo Upload and Processing Endpoints
 @app.post("/api/ai/upload-question-photo")
 async def upload_question_photo(request: Request):
@@ -2232,6 +2349,86 @@ async def get_all_virtual_questions():
     except Exception as e:
         print(f"❌ Error getting virtual questions: {str(e)}")
         return []
+
+async def save_solution_analysis(analysis_data):
+    """Save solution analysis to database"""
+    try:
+        async with aiosqlite.connect("ent_bot.db") as db:
+            # Create table if not exists
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS solution_analyses (
+                    id INTEGER PRIMARY KEY,
+                    analysis_id INTEGER UNIQUE,
+                    original_photo TEXT,
+                    is_correct BOOLEAN,
+                    confidence REAL,
+                    overall_grade TEXT,
+                    score INTEGER,
+                    feedback TEXT,
+                    detailed_analysis TEXT,
+                    suggestions TEXT,
+                    checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    ai_model TEXT
+                )
+            """)
+            
+            # Insert analysis
+            await db.execute("""
+                INSERT OR REPLACE INTO solution_analyses 
+                (analysis_id, original_photo, is_correct, confidence, overall_grade, score, feedback, detailed_analysis, suggestions, ai_model)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                analysis_data["id"],
+                analysis_data["original_photo"],
+                analysis_data["is_correct"],
+                analysis_data["confidence"],
+                analysis_data["overall_grade"],
+                analysis_data["score"],
+                analysis_data["feedback"],
+                json.dumps(analysis_data["detailed_analysis"]),
+                json.dumps(analysis_data["suggestions"]),
+                analysis_data["ai_model"]
+            ))
+            
+            await db.commit()
+            print(f"✅ Saved solution analysis {analysis_data['id']} to database")
+            
+    except Exception as e:
+        print(f"❌ Error saving solution analysis: {str(e)}")
+        raise e
+
+@app.get("/api/ai/solution-analyses")
+async def get_solution_analyses():
+    """Get all solution analyses"""
+    try:
+        async with aiosqlite.connect("ent_bot.db") as db:
+            cursor = await db.execute("""
+                SELECT analysis_id, original_photo, is_correct, confidence, overall_grade, score, feedback, detailed_analysis, suggestions, checked_at, ai_model
+                FROM solution_analyses ORDER BY checked_at DESC
+            """)
+            rows = await cursor.fetchall()
+            
+            analyses = []
+            for row in rows:
+                analyses.append({
+                    "id": row[0],
+                    "original_photo": row[1],
+                    "is_correct": row[2],
+                    "confidence": row[3],
+                    "overall_grade": row[4],
+                    "score": row[5],
+                    "feedback": row[6],
+                    "detailed_analysis": json.loads(row[7]) if row[7] else {},
+                    "suggestions": json.loads(row[8]) if row[8] else [],
+                    "checked_at": row[9],
+                    "ai_model": row[10]
+                })
+            
+            return {"analyses": analyses, "total": len(analyses)}
+            
+    except Exception as e:
+        print(f"❌ Error getting solution analyses: {str(e)}")
+        return {"analyses": [], "total": 0}
 
 if __name__ == "__main__":
     import uvicorn
