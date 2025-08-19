@@ -17,39 +17,25 @@ const PhysicsTestSystem = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isTestMode, setIsTestMode] = useState(false);
 
-  const generateQuestion = async (selectedTopic = null, selectedDifficulty = null) => {
+  const generateQuestion = () => {
     setIsGenerating(true);
     setShowResult(false);
     setUserAnswer('');
     
-    try {
-      console.log('📸 Для генерации вопроса необходимо загрузить фото');
-      
-      // Show instruction message - no API call needed
-      setCurrentQuestion({
-        text: "Для генерации вопросов необходимо загрузить фото с задачей",
-        type: "photo_required",
-        options: ["Загрузить фото"],
-        correct_answer: "",
-        explanation: "Переключитесь на режим 'Фото → Виртуальная задача' и загрузите изображение",
-        topic: "Инструкция",
-        difficulty: "info"
-      });
-      
-    } catch (error) {
-      console.error('❌ Error:', error);
-      setCurrentQuestion({
-        text: "Загрузите фото физической задачи для генерации вопросов",
-        type: "photo_required",
-        options: [],
-        correct_answer: "",
-        explanation: "Используйте режим загрузки фото для создания вопросов на основе изображений",
-        topic: "Инструкция",
-        difficulty: "info"
-      });
-    } finally {
-      setIsGenerating(false);
-    }
+    console.log('📸 Для генерации вопроса необходимо загрузить фото');
+    
+    // Show instruction message - no API call, no async
+    setCurrentQuestion({
+      text: "Для генерации вопросов необходимо загрузить фото с задачей",
+      type: "photo_required",
+      options: ["Загрузить фото"],
+      correct_answer: "",
+      explanation: "Переключитесь на режим 'Фото → Виртуальная задача' и загрузите изображение",
+      topic: "Инструкция",
+      difficulty: "info"
+    });
+    
+    setIsGenerating(false);
   };
 
   const submitAnswer = async () => {
