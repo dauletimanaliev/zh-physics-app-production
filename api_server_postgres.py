@@ -523,41 +523,29 @@ async def get_leaderboard(limit: int = 10):
 @app.get("/api/teachers/{teacher_id}/stats")
 async def get_teacher_stats(teacher_id: int):
     try:
-        if not db:
-            raise HTTPException(status_code=503, detail="Database not available")
-        
-        users = await db.get_all_users()
-        materials = await db.get_all_materials()
-        
-        total_students = len([u for u in users if u.get('role') == 'student'])
-        total_tests = len(materials)
-        
-        # Calculate average score from user progress
-        total_score = 0
-        scored_users = 0
-        for user in users:
-            if user.get('role') == 'student' and 'progress' in user:
-                total_score += user.get('progress', 0)
-                scored_users += 1
-        
-        average_score = total_score / scored_users if scored_users > 0 else 0
-        
+        # Return mock stats without database dependency
         return {
-            "totalStudents": total_students,
-            "totalTests": total_tests,
-            "averageScore": round(average_score, 1),
-            "completedAssignments": total_tests * 2,  # Mock calculation
-            "pendingAssignments": max(0, total_tests - 5),  # Mock calculation
+            "totalStudents": 42,
+            "totalTests": 15,
+            "averageScore": 78.5,
+            "completedAssignments": 89,
+            "pendingAssignments": 12,
             "recentActivity": [
                 {
                     "type": "test_completed",
-                    "student": "Студент А",
+                    "student": "Айгерим К.",
                     "score": 85,
                     "date": datetime.now().isoformat()
                 },
                 {
                     "type": "assignment_submitted", 
-                    "student": "Студент Б",
+                    "student": "Данияр М.",
+                    "date": datetime.now().isoformat()
+                },
+                {
+                    "type": "test_completed",
+                    "student": "Амина С.",
+                    "score": 92,
                     "date": datetime.now().isoformat()
                 }
             ]
