@@ -814,14 +814,49 @@ async def get_virtual_questions():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/ai/check-answer")
-async def check_answer():
+async def check_answer(request: Request):
     try:
+        # Get answer data from request
+        data = await request.json()
+        
+        user_answer = data.get('user_answer', '').strip()
+        correct_answer = data.get('correct_answer', '').strip()
+        question_text = data.get('question_text', '')
+        question_type = data.get('question_type', 'multiple_choice')
+        
+        print(f"🔍 Checking answer: '{user_answer}' vs '{correct_answer}'")
+        
+        # Smart answer comparison
+        is_correct = False
+        
+        if question_type == 'multiple_choice':
+            # Exact match for multiple choice
+            is_correct = user_answer.lower() == correct_answer.lower()
+        else:
+            # For text answers, more flexible matching
+            # Remove extra spaces and compare
+            user_clean = user_answer.lower().replace(' ', '')
+            correct_clean = correct_answer.lower().replace(' ', '')
+            is_correct = user_clean == correct_clean
+        
+        # Generate appropriate feedback
+        if is_correct:
+            explanation = "Правильный ответ! Отличная работа."
+            ai_feedback = "Вы правильно применили формулу и получили верный результат."
+        else:
+            explanation = f"Неправильно. Правильный ответ: {correct_answer}"
+            ai_feedback = f"Попробуйте еще раз. Правильный ответ: {correct_answer}. Изучите объяснение для лучшего понимания."
+        
         return {
-            "correct": True,
-            "explanation": "Правильный ответ! Отличная работа.",
-            "feedback": "Вы правильно применили формулу и получили верный результат.",
-            "confidence": 0.95
+            "is_correct": is_correct,
+            "correct": is_correct,  # For backward compatibility
+            "explanation": explanation,
+            "ai_feedback": ai_feedback,
+            "confidence": 0.95,
+            "user_answer": user_answer,
+            "correct_answer": correct_answer
         }
+        
     except Exception as e:
         print(f"❌ Error checking answer: {e}")
         raise HTTPException(status_code=500, detail=str(e))
