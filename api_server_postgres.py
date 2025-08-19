@@ -818,14 +818,13 @@ async def get_virtual_questions():
 @app.post("/api/ai/generate-question")
 async def generate_ai_question(request: Request):
     try:
-        # This endpoint now requires photo upload - redirect to photo-to-question
-        raise HTTPException(
-            status_code=400, 
-            detail="Для генерации вопросов необходимо загрузить фото. Используйте /api/ai/photo-to-question"
-        )
+        # Return instruction message instead of error
+        return {
+            "success": False,
+            "message": "Для генерации вопросов необходимо загрузить фото",
+            "instruction": "Переключитесь на режим 'Фото → Виртуальная задача' и загрузите изображение физической задачи"
+        }
         
-    except HTTPException:
-        raise
     except Exception as e:
         print(f"❌ Error in generate-question endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
