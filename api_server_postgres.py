@@ -816,51 +816,16 @@ async def get_virtual_questions():
 @app.post("/api/ai/generate-question")
 async def generate_ai_question(request: Request):
     try:
-        # Get parameters from request
-        data = await request.json()
+        # This endpoint now requires photo upload - redirect to photo-to-question
+        raise HTTPException(
+            status_code=400, 
+            detail="Для генерации вопросов необходимо загрузить фото. Используйте /api/ai/photo-to-question"
+        )
         
-        topic = data.get('topic')
-        difficulty = data.get('difficulty')
-        language = data.get('language', 'ru')
-        
-        print(f"🤖 Generating AI question: topic={topic}, difficulty={difficulty}")
-        
-        # Generate varied physics questions using our template system
-        import random
-        
-        # Use existing question generation logic
-        fake_image_content = b"fake_content"  # Placeholder
-        questions = await generate_physics_questions(fake_image_content, "generated")
-        
-        # Filter by topic and difficulty if specified
-        filtered_questions = questions
-        if topic:
-            filtered_questions = [q for q in filtered_questions if topic.lower() in q.get('topic', '').lower()]
-        if difficulty:
-            filtered_questions = [q for q in filtered_questions if q.get('difficulty') == difficulty]
-        
-        # If no matches, use all questions
-        if not filtered_questions:
-            filtered_questions = questions
-        
-        selected_question = random.choice(filtered_questions)
-        
-        return {
-            "success": True,
-            "question": {
-                "id": int(datetime.now().timestamp()),
-                "text": selected_question["text"],
-                "type": "multiple_choice",
-                "options": selected_question["options"],
-                "correct_answer": selected_question["correct_answer"],
-                "topic": selected_question["topic"],
-                "difficulty": selected_question["difficulty"],
-                "explanation": selected_question["explanation"]
-            }
-        }
-        
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"❌ Error generating AI question: {e}")
+        print(f"❌ Error in generate-question endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/ai/check-answer")

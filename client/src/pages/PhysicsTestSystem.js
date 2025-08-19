@@ -20,30 +20,29 @@ const PhysicsTestSystem = () => {
     setUserAnswer('');
     
     try {
-      console.log('🤖 Generating AI physics question...');
+      console.log('📸 Для генерации вопроса необходимо загрузить фото');
       
-      // Call AI API to generate physics question with filters
-      const response = await apiClient.generateAIQuestion({
-        topic: selectedTopic,
-        difficulty: selectedDifficulty,
-        language: 'ru'
+      // Show message that photo is required
+      setCurrentQuestion({
+        text: "Для генерации вопросов по физике необходимо загрузить фото с задачей или диаграммой",
+        type: "photo_required",
+        options: [],
+        correct_answer: "",
+        explanation: "Переключитесь на режим 'Фото → Виртуальная задача' и загрузите изображение",
+        topic: "Инструкция",
+        difficulty: "info"
       });
       
-      console.log('✅ AI Question generated:', response);
-      setCurrentQuestion(response.question);
-      setQuestionCount(prev => prev + 1);
-      
     } catch (error) {
-      console.error('❌ Error generating question:', error);
-      // Fallback to a default question with multiple choice
+      console.error('❌ Error:', error);
       setCurrentQuestion({
-        text: "Какая сила действует на тело массой 2 кг при ускорении 3 м/с²?",
-        type: "multiple_choice",
-        options: ["4 Н", "6 Н", "8 Н", "10 Н"],
-        correct_answer: "6 Н",
-        explanation: "По второму закону Ньютона: F = ma = 2 кг × 3 м/с² = 6 Н",
-        topic: "Механика",
-        difficulty: "easy"
+        text: "Загрузите фото физической задачи для генерации вопросов",
+        type: "photo_required",
+        options: [],
+        correct_answer: "",
+        explanation: "Используйте режим загрузки фото для создания вопросов на основе изображений",
+        topic: "Инструкция",
+        difficulty: "info"
       });
     } finally {
       setIsGenerating(false);
@@ -239,7 +238,20 @@ const PhysicsTestSystem = () => {
                     </div>
                   </div>
 
-                  {currentQuestion.type === 'multiple_choice' && currentQuestion.options ? (
+                  {currentQuestion.type === 'photo_required' ? (
+                    <div className="photo-required-message">
+                      <div className="instruction-card">
+                        <h3>📸 Загрузите фото для генерации вопросов</h3>
+                        <p>Система работает только с реальными изображениями физических задач</p>
+                        <button 
+                          className="switch-mode-btn"
+                          onClick={() => setMode('photo')}
+                        >
+                          📸 Перейти к загрузке фото
+                        </button>
+                      </div>
+                    </div>
+                  ) : currentQuestion.type === 'multiple_choice' && currentQuestion.options ? (
                     <div className="multiple-choice">
                       {currentQuestion.options.map((option, index) => (
                         <button
@@ -251,7 +263,7 @@ const PhysicsTestSystem = () => {
                         </button>
                       ))}
                     </div>
-                  ) : (
+                  ) : currentQuestion.type !== 'photo_required' ? (
                     <div className="text-answer">
                       <input
                         type="text"
@@ -262,15 +274,17 @@ const PhysicsTestSystem = () => {
                         onKeyPress={(e) => e.key === 'Enter' && submitAnswer()}
                       />
                     </div>
-                  )}
+                  ) : null}
 
-                  <button 
-                    onClick={submitAnswer} 
-                    className="submit-btn"
-                    disabled={!userAnswer.trim()}
-                  >
-                    ✅ Проверить ответ
-                  </button>
+                  {currentQuestion.type !== 'photo_required' && (
+                    <button 
+                      onClick={submitAnswer} 
+                      className="submit-btn"
+                      disabled={!userAnswer.trim()}
+                    >
+                      ✅ Проверить ответ
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="result-section">
