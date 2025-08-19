@@ -51,17 +51,30 @@ const PhotoQuestionUpload = ({ onQuestionCreated }) => {
       
       const response = await apiClient.uploadQuestionPhoto(selectedFile);
       
-      if (response.success) {
-        setProcessedQuestion(response.virtual_question);
-        console.log('✅ Photo processed successfully:', response.virtual_question);
+      console.log('📋 Full response from backend:', response);
+      
+      if (response.questions && Array.isArray(response.questions)) {
+        // Handle multiple questions from AI
+        console.log('✅ Multiple questions processed:', response.questions);
+        setUploadedQuestions(prev => [...response.questions, ...prev]);
         
-        // Add to uploaded questions list
+        // Notify parent component with all questions
+        if (onQuestionCreated) {
+          onQuestionCreated({ questions: response.questions });
+        }
+      } else if (response.virtual_question) {
+        // Handle single question fallback
+        setProcessedQuestion(response.virtual_question);
+        console.log('✅ Single question processed:', response.virtual_question);
+        
         setUploadedQuestions(prev => [response.virtual_question, ...prev]);
         
-        // Notify parent component
         if (onQuestionCreated) {
-          onQuestionCreated(response.virtual_question);
+          onQuestionCreated({ virtual_question: response.virtual_question });
         }
+      } else {
+        console.log('⚠️ No questions in response:', response);
+        alert('Не удалось извлечь вопросы из изображения. Попробуйте другое фото.');
       }
     } catch (error) {
       console.error('❌ Error uploading photo:', error);

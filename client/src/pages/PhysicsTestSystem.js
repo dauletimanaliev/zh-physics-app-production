@@ -25,7 +25,7 @@ const PhysicsTestSystem = () => {
     try {
       console.log('📸 Для генерации вопроса необходимо загрузить фото');
       
-      // Show instruction message instead of trying to generate
+      // Show instruction message - no API call needed
       setCurrentQuestion({
         text: "Для генерации вопросов необходимо загрузить фото с задачей",
         type: "photo_required",
