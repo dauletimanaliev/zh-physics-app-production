@@ -24,14 +24,13 @@ async def lifespan(app: FastAPI):
     try:
         print("🚀 Starting API server with PostgreSQL...")
         
-        # Safe database initialization
+        # Safe database initialization - continue without DB if connection fails
         try:
             db = PostgresDatabase()
             await db.init_db()
             print("✅ PostgreSQL database initialized successfully")
         except Exception as db_error:
-            print(f"❌ Database initialization error: {db_error}")
-            print(f"📜 DB Error traceback: {traceback.format_exc()}")
+            print(f"⚠️ Database connection failed, continuing without DB: {db_error}")
             db = None
             
         print("🎯 API server startup completed")
