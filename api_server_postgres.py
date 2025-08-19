@@ -678,8 +678,8 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
                         ]
                     }
                 ],
-                max_tokens=1500,
-                temperature=0.7
+                max_tokens=3000,
+                temperature=0.3
             )
             
             # Parse AI response
@@ -706,6 +706,22 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
                 # Try to fix common JSON issues
                 json_str = json_str.replace('...', '')  # Remove truncation indicators
                 json_str = json_str.replace('\n', ' ')   # Remove newlines that might break parsing
+                
+                # More aggressive JSON cleaning
+                import re
+                # Remove any trailing commas before closing brackets
+                json_str = re.sub(r',\s*}', '}', json_str)
+                json_str = re.sub(r',\s*]', ']', json_str)
+                
+                # Try to find and fix incomplete JSON at the end
+                if json_str.count('{') != json_str.count('}'):
+                    print("⚠️ Unbalanced braces detected, attempting to fix...")
+                    # Find last complete object
+                    last_complete = json_str.rfind('}')
+                    if last_complete != -1:
+                        json_str = json_str[:last_complete + 1] + ']'
+                
+                print(f"📋 Cleaned JSON (last 200 chars): ...{json_str[-200:]}")
                 
                 ai_questions = json.loads(json_str)
                 
