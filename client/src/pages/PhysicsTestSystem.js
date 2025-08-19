@@ -6,13 +6,16 @@ import './PhysicsTestSystem.css';
 const PhysicsTestSystem = () => {
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [userAnswer, setUserAnswer] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
   const [showResult, setShowResult] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [testHistory, setTestHistory] = useState([]);
   const [score, setScore] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
   const [mode, setMode] = useState('test'); // 'test' or 'photo'
   const [expandedExplanation, setExpandedExplanation] = useState(false);
+  const [questionSet, setQuestionSet] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isTestMode, setIsTestMode] = useState(false);
 
   const generateQuestion = async (selectedTopic = null, selectedDifficulty = null) => {
     setIsGenerating(true);
@@ -121,11 +124,54 @@ const PhysicsTestSystem = () => {
     setQuestionCount(0);
   };
 
-  const handleQuestionCreated = (newQuestion) => {
-    console.log('📸 New virtual question created:', newQuestion);
-    // Could switch to test mode and load this question
+  const handleQuestionCreated = (response) => {
+    console.log('📸 New virtual questions created:', response);
+    
+    // Handle multiple questions from AI
+    if (response.questions && Array.isArray(response.questions)) {
+      setQuestionSet(response.questions);
+      setCurrentQuestionIndex(0);
+      setCurrentQuestion(response.questions[0]);
+      setIsTestMode(true);
+    } else if (response.virtual_question) {
+      // Handle single question fallback
+      setQuestionSet([response.virtual_question]);
+      setCurrentQuestionIndex(0);
+      setCurrentQuestion(response.virtual_question);
+      setIsTestMode(true);
+    }
+    
     setMode('test');
-    setCurrentQuestion(newQuestion);
+    setShowResult(false);
+    setUserAnswer('');
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestionIndex < questionSet.length - 1) {
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+      setCurrentQuestion(questionSet[nextIndex]);
+      setUserAnswer('');
+      setShowResult(false);
+      setExpandedExplanation(false);
+    } else {
+      // Test completed
+      alert(`Тест завершен! Ваш результат: ${score}/${questionSet.length}`);
+      setIsTestMode(false);
+      setQuestionSet([]);
+      setCurrentQuestion(null);
+    }
+  };
+
+  const previousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      const prevIndex = currentQuestionIndex - 1;
+      setCurrentQuestionIndex(prevIndex);
+      setCurrentQuestion(questionSet[prevIndex]);
+      setUserAnswer('');
+      setShowResult(false);
+      setExpandedExplanation(false);
+    }
   };
 
   return (
@@ -150,19 +196,47 @@ const PhysicsTestSystem = () => {
         </div>
 
         {mode === 'test' && (
-          <div className="test-stats">
-            <div className="stat">
-              <span className="stat-value">{score}</span>
-              <span className="stat-label">Правильных</span>
-            </div>
-            <div className="stat">
-              <span className="stat-value">{questionCount}</span>
-              <span className="stat-label">Вопросов</span>
-            </div>
-            <div className="stat">
-              <span className="stat-value">{questionCount > 0 ? Math.round((score / questionCount) * 100) : 0}%</span>
-              <span className="stat-label">Точность</span>
-            </div>
+          <div className="test-mode">
+            {!isTestMode && (
+              <div className="test-controls">
+                <div className="topic-selector">
+                  <label>🎯 Тема:</label>
+                  <select>
+                    <option>Любая тема</option>
+                  </select>
+                </div>
+                
+                <div className="difficulty-selector">
+                  <label>🎚️ Сложность:</label>
+                  <select>
+                    <option>Любая</option>
+                  </select>
+                </div>
+                
+                <button 
+                  className="generate-btn"
+                  onClick={() => generateQuestion()}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? '⏳ Генерация...' : '🤖 Генерировать вопрос'}
+                </button>
+              </div>
+            )}
+            
+            {isTestMode && questionSet.length > 0 && (
+              <div className="test-progress">
+                <div className="progress-info">
+                  <span>Вопрос {currentQuestionIndex + 1} из {questionSet.length}</span>
+                  <span>Счет: {score}/{questionCount}</span>
+                </div>
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{width: `${((currentQuestionIndex + 1) / questionSet.length) * 100}%`}}
+                  ></div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

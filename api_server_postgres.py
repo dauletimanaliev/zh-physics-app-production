@@ -644,7 +644,7 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
             image_base64 = base64.b64encode(image_content).decode('utf-8')
             
             # Create AI prompt for physics question generation
-            prompt = """Analyze this physics image and generate 3 different physics questions in Kazakh language. 
+            prompt = """Analyze this physics image and generate 10 different physics questions in Kazakh language. 
             Each question should be multiple choice with 5 options (A, B, C, D, E).
             
             Return JSON format:
@@ -655,12 +655,13 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
                     "correct_answer": "Correct option text",
                     "topic": "Physics topic in Kazakh",
                     "difficulty": "easy/medium/hard",
-                    "explanation": "Explanation in Kazakh"
+                    "explanation": "Detailed step-by-step explanation in Kazakh with formulas, calculations, and physical principles. Include: 1) What physics concept is involved, 2) Which formula to use, 3) Step-by-step solution, 4) Why other options are incorrect, 5) Related physics topics"
                 }
             ]
             
             Focus on: mechanics, kinematics, dynamics, oscillations, electricity, thermodynamics.
-            Make questions educational and appropriate for high school physics level."""
+            Make questions educational and appropriate for high school physics level.
+            Create diverse questions covering different aspects of the physics problem shown in the image."""
             
             # Call OpenAI Vision API
             response = client.chat.completions.create(

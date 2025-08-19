@@ -491,16 +491,117 @@
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
-.explanation-detailed {
-  margin-top: 20px;
+.explanation-detailed-explanation {
+  margin-top: 15px;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 15px;
-  border-left: 4px solid #feca57;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border-left: 4px solid #007bff;
+  animation: slideDown 0.3s ease-out;
 }
 
-.solution-steps {
-  margin-bottom: 20px;
+.test-progress {
+  margin: 20px 0;
+  padding: 15px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 12px;
+  border: 1px solid #2196f3;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.explanation-step {
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  border-left: 3px solid #4caf50;
+}
+
+.step-number {
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+  background: #4caf50;
+  color: white;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 25px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.physics-concepts {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(103, 58, 183, 0.1);
+  border-radius: 8px;
+  border: 1px solid #673ab7;
+}
+
+.concept-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.concept-tag {
+  padding: 6px 12px;
+  background: #673ab7;
+  color: white;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.nav-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 0 5px;
+}
+
+.nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nav-btn.primary {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: white;
+}
+
+.nav-btn.primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
 .solution-steps h5 {
