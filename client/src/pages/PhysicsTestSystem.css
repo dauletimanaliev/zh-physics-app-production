@@ -578,6 +578,30 @@
   font-weight: 500;
 }
 
+.navigation-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 15px;
+}
+
+.progress-info {
+  text-align: center;
+  font-weight: 600;
+  color: #fff;
+  font-size: 16px;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
 .nav-btn {
   padding: 12px 24px;
   border: none;
@@ -586,12 +610,19 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin: 0 5px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.nav-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
 .nav-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .nav-btn.primary {

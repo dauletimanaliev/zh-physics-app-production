@@ -439,8 +439,31 @@ const PhysicsTestSystem = () => {
                   </div>
                   
                   <div className="next-actions">
+                    {questionSet.length > 1 && (
+                      <div className="navigation-controls">
+                        <div className="progress-info">
+                          Вопрос {currentQuestionIndex + 1} из {questionSet.length}
+                        </div>
+                        <div className="nav-buttons">
+                          <button 
+                            onClick={previousQuestion} 
+                            className="nav-btn"
+                            disabled={currentQuestionIndex === 0}
+                          >
+                            ⬅️ Предыдущий
+                          </button>
+                          <button 
+                            onClick={nextQuestion} 
+                            className="nav-btn"
+                            disabled={currentQuestionIndex === questionSet.length - 1}
+                          >
+                            ➡️ Следующий
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <button onClick={generateQuestion} className="next-btn">
-                      🎲 Следующий вопрос
+                      🎲 Новый вопрос
                     </button>
                     <button onClick={resetTest} className="reset-btn">
                       🔄 Начать заново
