@@ -13,12 +13,15 @@ import traceback
 from datetime import datetime
 from contextlib import asynccontextmanager
 
+# Global database instance
+db = None
+
 # Lifespan event handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan event handler with full error protection"""
+    global db
     try:
-        global db
         print("🚀 Starting API server with PostgreSQL...")
         
         # Safe database initialization
@@ -29,6 +32,7 @@ async def lifespan(app: FastAPI):
         except Exception as db_error:
             print(f"❌ Database initialization error: {db_error}")
             print(f"📜 DB Error traceback: {traceback.format_exc()}")
+            db = None
             
         print("🎯 API server startup completed")
         
@@ -41,7 +45,8 @@ async def lifespan(app: FastAPI):
     # Cleanup on shutdown
     try:
         print("🛑 Shutting down API server...")
-        await db.close()
+        if db:
+            await db.close()
     except Exception as shutdown_error:
         print(f"⚠️ Shutdown error: {shutdown_error}")
 
@@ -518,6 +523,9 @@ async def get_leaderboard(limit: int = 10):
 @app.get("/api/teachers/{teacher_id}/stats")
 async def get_teacher_stats(teacher_id: int):
     try:
+        if not db:
+            raise HTTPException(status_code=503, detail="Database not available")
+        
         users = await db.get_all_users()
         materials = await db.get_all_materials()
         
