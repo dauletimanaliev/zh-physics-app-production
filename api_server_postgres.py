@@ -634,6 +634,8 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
     # Try to use real AI first, fallback to templates if no API key
     openai_api_key = os.getenv("OPENAI_API_KEY")
     
+    print(f"🔑 OpenAI API Key status: {'Found' if openai_api_key else 'Not found'}")
+    
     if openai_api_key:
         try:
             # Initialize OpenAI client
