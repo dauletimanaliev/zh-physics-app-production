@@ -215,7 +215,10 @@ const PhysicsTestSystem = () => {
                 
                 <button 
                   className="generate-btn"
-                  onClick={() => generateQuestion()}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    generateQuestion();
+                  }}
                   disabled={isGenerating}
                 >
                   {isGenerating ? '⏳ Генерация...' : '🤖 Генерировать вопрос'}
@@ -462,10 +465,10 @@ const PhysicsTestSystem = () => {
                         </div>
                       </div>
                     )}
-                    <button onClick={generateQuestion} className="next-btn">
+                    <button onClick={(e) => { e.preventDefault(); generateQuestion(); }} className="next-btn">
                       🎲 Новый вопрос
                     </button>
-                    <button onClick={resetTest} className="reset-btn">
+                    <button onClick={(e) => { e.preventDefault(); resetTest(); }} className="reset-btn">
                       🔄 Начать заново
                     </button>
                   </div>
@@ -475,7 +478,7 @@ const PhysicsTestSystem = () => {
           ) : (
             <div className="no-question">
               <h3>Готовы к тесту по физике?</h3>
-              <button onClick={generateQuestion} className="start-btn">
+              <button onClick={(e) => { e.preventDefault(); generateQuestion(); }} className="start-btn">
                 🚀 Начать тест
               </button>
             </div>
