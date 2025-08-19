@@ -461,6 +461,119 @@
   opacity: 0.8;
 }
 
+/* Expandable Explanation Styles */
+.explanation-content {
+  margin-top: 15px;
+}
+
+.explanation-short {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+.expand-btn, .collapse-btn {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 10px 0;
+  display: block;
+}
+
+.expand-btn:hover, .collapse-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.explanation-detailed {
+  margin-top: 20px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  border-left: 4px solid #feca57;
+}
+
+.solution-steps {
+  margin-bottom: 20px;
+}
+
+.solution-steps h5 {
+  color: #feca57;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.step-number {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.step-text {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.full-explanation {
+  margin: 20px 0;
+}
+
+.full-explanation h5 {
+  color: #feca57;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.related-topics {
+  margin-top: 20px;
+}
+
+.related-topics h5 {
+  color: #feca57;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.topic-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.topic-tag {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .physics-test-system {
@@ -487,5 +600,23 @@
   .next-actions {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+  
+  .explanation-detailed {
+    padding: 15px;
+  }
+  
+  .step {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .step-number {
+    margin-bottom: 8px;
+    margin-right: 0;
+  }
+  
+  .topic-tags {
+    justify-content: center;
   }
 }

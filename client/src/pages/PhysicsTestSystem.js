@@ -12,6 +12,7 @@ const PhysicsTestSystem = () => {
   const [score, setScore] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
   const [mode, setMode] = useState('test'); // 'test' or 'photo'
+  const [expandedExplanation, setExpandedExplanation] = useState(false);
 
   const generateQuestion = async (selectedTopic = null, selectedDifficulty = null) => {
     setIsGenerating(true);
@@ -291,7 +292,60 @@ const PhysicsTestSystem = () => {
                     {testHistory[testHistory.length - 1]?.explanation && (
                       <div className="explanation">
                         <h4>💡 Объяснение:</h4>
-                        <p>{testHistory[testHistory.length - 1].explanation}</p>
+                        <div className="explanation-content">
+                          <p className="explanation-short">
+                            {testHistory[testHistory.length - 1].explanation.split('.')[0]}.
+                          </p>
+                          {!expandedExplanation && (
+                            <button 
+                              className="expand-btn"
+                              onClick={() => setExpandedExplanation(true)}
+                            >
+                              📖 Развернуть подробное решение
+                            </button>
+                          )}
+                          {expandedExplanation && (
+                            <div className="explanation-detailed">
+                              <div className="solution-steps">
+                                <h5>🔍 Пошаговое решение:</h5>
+                                <div className="step">
+                                  <span className="step-number">1.</span>
+                                  <span className="step-text">Определяем данные из условия задачи</span>
+                                </div>
+                                <div className="step">
+                                  <span className="step-number">2.</span>
+                                  <span className="step-text">Выбираем подходящую формулу</span>
+                                </div>
+                                <div className="step">
+                                  <span className="step-number">3.</span>
+                                  <span className="step-text">Подставляем значения и вычисляем</span>
+                                </div>
+                                <div className="step">
+                                  <span className="step-number">4.</span>
+                                  <span className="step-text">Проверяем размерность и логичность ответа</span>
+                                </div>
+                              </div>
+                              <div className="full-explanation">
+                                <h5>📚 Полное объяснение:</h5>
+                                <p>{testHistory[testHistory.length - 1].explanation}</p>
+                              </div>
+                              <div className="related-topics">
+                                <h5>🔗 Связанные темы:</h5>
+                                <div className="topic-tags">
+                                  <span className="topic-tag">Кинематика</span>
+                                  <span className="topic-tag">Графики движения</span>
+                                  <span className="topic-tag">Перемещение</span>
+                                </div>
+                              </div>
+                              <button 
+                                className="collapse-btn"
+                                onClick={() => setExpandedExplanation(false)}
+                              >
+                                ⬆️ Свернуть
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
