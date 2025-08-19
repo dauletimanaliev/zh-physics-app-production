@@ -664,7 +664,7 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
             
             # Call OpenAI Vision API
             response = client.chat.completions.create(
-                model="gpt-4-vision-preview",
+                model="gpt-4o",
                 messages=[
                     {
                         "role": "user",
