@@ -686,21 +686,32 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
             
             # Parse AI response
             ai_content = response.choices[0].message.content
+            print(f"🤖 AI Response: {ai_content[:500]}...")
             
             # Extract JSON from response
             try:
                 # Find JSON in the response
                 start_idx = ai_content.find('[')
                 end_idx = ai_content.rfind(']') + 1
+                
+                if start_idx == -1 or end_idx == 0:
+                    print("⚠️ No JSON array found in AI response")
+                    raise json.JSONDecodeError("No JSON array found", ai_content, 0)
+                
                 json_str = ai_content[start_idx:end_idx]
+                print(f"📋 Extracted JSON: {json_str[:200]}...")
                 
                 ai_questions = json.loads(json_str)
+                
+                if not isinstance(ai_questions, list) or len(ai_questions) == 0:
+                    print("⚠️ AI response is not a valid question list")
+                    raise ValueError("Invalid question format")
                 
                 print(f"✅ Generated {len(ai_questions)} AI questions from image")
                 return ai_questions
                 
-            except json.JSONDecodeError:
-                print("⚠️ Failed to parse AI JSON response, using fallback")
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"⚠️ Failed to parse AI JSON response: {e}, using fallback")
                 
         except Exception as e:
             print(f"⚠️ OpenAI API error: {e}, using fallback templates")
