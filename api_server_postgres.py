@@ -644,24 +644,22 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
             image_base64 = base64.b64encode(image_content).decode('utf-8')
             
             # Create AI prompt for physics question generation
-            prompt = """Analyze this physics image and generate 10 different physics questions in Kazakh language. 
-            Each question should be multiple choice with 5 options (A, B, C, D, E).
+            prompt = """Analyze this physics image and generate exactly 10 different physics questions in Kazakh language. 
+            Each question should be multiple choice with exactly 4 options.
             
-            Return JSON format:
+            Return ONLY valid JSON array without any markdown formatting or extra text:
             [
                 {
                     "text": "Question text in Kazakh",
-                    "options": ["Option A", "Option B", "Option C", "Option D", "Option E"],
+                    "options": ["Option A", "Option B", "Option C", "Option D"],
                     "correct_answer": "Correct option text",
                     "topic": "Physics topic in Kazakh",
-                    "difficulty": "easy/medium/hard",
-                    "explanation": "Detailed step-by-step explanation in Kazakh with formulas, calculations, and physical principles. Include: 1) What physics concept is involved, 2) Which formula to use, 3) Step-by-step solution, 4) Why other options are incorrect, 5) Related physics topics"
+                    "difficulty": "easy",
+                    "explanation": "Detailed step-by-step explanation in Kazakh with formulas and calculations"
                 }
             ]
             
-            Focus on: mechanics, kinematics, dynamics, oscillations, electricity, thermodynamics.
-            Make questions educational and appropriate for high school physics level.
-            Create diverse questions covering different aspects of the physics problem shown in the image."""
+            IMPORTANT: Return ONLY the JSON array, no markdown blocks, no extra text, no truncation."""
             
             # Call OpenAI Vision API
             response = client.chat.completions.create(
@@ -702,7 +700,12 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
                     raise json.JSONDecodeError("No JSON array found", clean_content, 0)
                 
                 json_str = clean_content[start_idx:end_idx]
-                print(f"📋 Extracted JSON: {json_str[:200]}...")
+                print(f"📋 Extracted JSON length: {len(json_str)} chars")
+                print(f"📋 Full extracted JSON: {json_str}")
+                
+                # Try to fix common JSON issues
+                json_str = json_str.replace('...', '')  # Remove truncation indicators
+                json_str = json_str.replace('\n', ' ')   # Remove newlines that might break parsing
                 
                 ai_questions = json.loads(json_str)
                 
