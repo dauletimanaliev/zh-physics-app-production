@@ -624,11 +624,89 @@ async def photo_to_question(request: Request):
 # AI Question Generation Service
 async def generate_physics_questions(image_content: bytes, filename: str) -> List[Dict]:
     """
-    Scalable AI-powered physics question generation
+    Real AI-powered physics question generation using OpenAI API
     """
-    import random
+    import openai
+    import os
+    import json
+    import base64
     
-    # Physics question templates for scalable generation
+    # Try to use real AI first, fallback to templates if no API key
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    
+    if openai_api_key:
+        try:
+            # Initialize OpenAI client
+            client = openai.OpenAI(api_key=openai_api_key)
+            
+            # Encode image to base64 for vision API
+            image_base64 = base64.b64encode(image_content).decode('utf-8')
+            
+            # Create AI prompt for physics question generation
+            prompt = """Analyze this physics image and generate 3 different physics questions in Kazakh language. 
+            Each question should be multiple choice with 5 options (A, B, C, D, E).
+            
+            Return JSON format:
+            [
+                {
+                    "text": "Question text in Kazakh",
+                    "options": ["Option A", "Option B", "Option C", "Option D", "Option E"],
+                    "correct_answer": "Correct option text",
+                    "topic": "Physics topic in Kazakh",
+                    "difficulty": "easy/medium/hard",
+                    "explanation": "Explanation in Kazakh"
+                }
+            ]
+            
+            Focus on: mechanics, kinematics, dynamics, oscillations, electricity, thermodynamics.
+            Make questions educational and appropriate for high school physics level."""
+            
+            # Call OpenAI Vision API
+            response = client.chat.completions.create(
+                model="gpt-4-vision-preview",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_base64}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=1500,
+                temperature=0.7
+            )
+            
+            # Parse AI response
+            ai_content = response.choices[0].message.content
+            
+            # Extract JSON from response
+            try:
+                # Find JSON in the response
+                start_idx = ai_content.find('[')
+                end_idx = ai_content.rfind(']') + 1
+                json_str = ai_content[start_idx:end_idx]
+                
+                ai_questions = json.loads(json_str)
+                
+                print(f"✅ Generated {len(ai_questions)} AI questions from image")
+                return ai_questions
+                
+            except json.JSONDecodeError:
+                print("⚠️ Failed to parse AI JSON response, using fallback")
+                
+        except Exception as e:
+            print(f"⚠️ OpenAI API error: {e}, using fallback templates")
+    
+    # Fallback to template-based generation
+    print("📝 Using template-based question generation")
+    
+    # Physics question templates for fallback
     question_templates = {
         "mechanics": [
             {
@@ -646,26 +724,60 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
                 "topic": "Кинематика",
                 "difficulty": "hard",
                 "explanation": "Графиктен көрініп тұрғандай, максимал орын ауыстыру t = 6 с кезінде болады"
+            },
+            {
+                "text": "Автомобиль тұрақты үдеумен қозғалып, 10 с ішінде жылдамдығы 5 м/с-тан 25 м/с-қа дейін артты. Автомобильдің үдеуі",
+                "options": ["1 м/с²", "2 м/с²", "3 м/с²", "4 м/с²", "5 м/с²"],
+                "correct_answer": "2 м/с²",
+                "topic": "Кинематика",
+                "difficulty": "easy",
+                "explanation": "a = (v₂ - v₁)/t = (25 - 5)/10 = 2 м/с²"
             }
         ],
         "oscillations": [
             {
                 "text": "Серпімді маятниктің тербеліс периодын анықтаңыз (k=100 Н/м, m=1 кг)",
-                "options": ["0,63 с", "1,0 с", "10 с", "0,1 с"],
+                "options": ["0,63 с", "1,0 с", "10 с", "0,1 с", "6,28 с"],
                 "correct_answer": "0,63 с",
                 "topic": "Тербелістер",
                 "difficulty": "medium",
                 "explanation": "T = 2π√(m/k) = 2π√(1/100) ≈ 0,63 с"
+            },
+            {
+                "text": "Математикалық маятниктің ұзындығы 1 м болса, оның тербеліс периоды",
+                "options": ["1 с", "2 с", "3,14 с", "6,28 с", "0,5 с"],
+                "correct_answer": "2 с",
+                "topic": "Тербелістер", 
+                "difficulty": "easy",
+                "explanation": "T = 2π√(l/g) = 2π√(1/10) ≈ 2 с"
             }
         ],
         "dynamics": [
             {
                 "text": "20 Н күш әсерінен 4 кг массалы дененің үдеуін анықтаңыз",
-                "options": ["5 м/с²", "80 м/с²", "16 м/с²", "0,2 м/с²"],
+                "options": ["5 м/с²", "80 м/с²", "16 м/с²", "0,2 м/с²", "24 м/с²"],
                 "correct_answer": "5 м/с²",
                 "topic": "Динамика", 
                 "difficulty": "easy",
                 "explanation": "a = F/m = 20 Н / 4 кг = 5 м/с²"
+            },
+            {
+                "text": "Массасы 2 кг дене горизонталь бетпен 0,3 үйкеліс коэффициентімен сырғанайды. Үйкеліс күші",
+                "options": ["4 Н", "6 Н", "8 Н", "10 Н", "12 Н"],
+                "correct_answer": "6 Н",
+                "topic": "Динамика",
+                "difficulty": "medium", 
+                "explanation": "F_үйкеліс = μ × m × g = 0,3 × 2 × 10 = 6 Н"
+            }
+        ],
+        "electricity": [
+            {
+                "text": "Кернеуі 12 В, кедергісі 4 Ом өткізгіштегі ток күші",
+                "options": ["2 А", "3 А", "4 А", "6 А", "8 А"],
+                "correct_answer": "3 А",
+                "topic": "Электр",
+                "difficulty": "easy",
+                "explanation": "I = U/R = 12 В / 4 Ом = 3 А"
             }
         ]
     }
@@ -678,7 +790,7 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
     elif file_size > 10000:  # Medium image
         return question_templates["mechanics"] + question_templates["dynamics"]
     else:  # Small image
-        return question_templates["dynamics"]
+        return question_templates["dynamics"] + question_templates["electricity"]
 
 @app.get("/api/ai/virtual-questions")
 async def get_virtual_questions():
