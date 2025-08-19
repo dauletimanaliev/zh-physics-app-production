@@ -594,18 +594,73 @@ async def get_teacher_materials(teacher_id: int = 111333):
 @app.post("/api/ai/photo-to-question")
 async def photo_to_question():
     try:
-        # This would integrate with AI service for photo processing
+        # Generate varied physics questions
+        import random
+        
+        questions = [
+            {
+                "text": "Найдите силу тяжести для тела массой 5 кг",
+                "options": ["49 Н", "50 Н", "5 Н", "490 Н"],
+                "correct_answer": "49 Н",
+                "topic": "Механика",
+                "difficulty": "easy",
+                "explanation": "F = mg = 5 кг × 9.8 м/с² = 49 Н"
+            },
+            {
+                "text": "Определите ускорение тела при силе 20 Н и массе 4 кг",
+                "options": ["5 м/с²", "80 м/с²", "16 м/с²", "0.2 м/с²"],
+                "correct_answer": "5 м/с²",
+                "topic": "Динамика",
+                "difficulty": "medium",
+                "explanation": "a = F/m = 20 Н / 4 кг = 5 м/с²"
+            },
+            {
+                "text": "Найдите кинетическую энергию тела массой 2 кг при скорости 10 м/с",
+                "options": ["100 Дж", "20 Дж", "200 Дж", "10 Дж"],
+                "correct_answer": "100 Дж",
+                "topic": "Энергия",
+                "difficulty": "medium",
+                "explanation": "Ek = mv²/2 = 2×10²/2 = 100 Дж"
+            },
+            {
+                "text": "Определите период колебаний пружинного маятника с k=100 Н/м, m=1 кг",
+                "options": ["0.63 с", "1.0 с", "10 с", "0.1 с"],
+                "correct_answer": "0.63 с",
+                "topic": "Колебания",
+                "difficulty": "hard",
+                "explanation": "T = 2π√(m/k) = 2π√(1/100) ≈ 0.63 с"
+            },
+            {
+                "text": "Найдите импульс тела массой 3 кг при скорости 8 м/с",
+                "options": ["24 кг·м/с", "11 кг·м/с", "2.67 кг·м/с", "64 кг·м/с"],
+                "correct_answer": "24 кг·м/с",
+                "topic": "Импульс",
+                "difficulty": "easy",
+                "explanation": "p = mv = 3 кг × 8 м/с = 24 кг·м/с"
+            },
+            {
+                "text": "Определите мощность при работе 600 Дж за 10 секунд",
+                "options": ["60 Вт", "610 Вт", "6000 Вт", "6 Вт"],
+                "correct_answer": "60 Вт",
+                "topic": "Мощность",
+                "difficulty": "easy",
+                "explanation": "P = A/t = 600 Дж / 10 с = 60 Вт"
+            }
+        ]
+        
+        selected_question = random.choice(questions)
+        
         return {
             "success": True,
             "virtual_question": {
                 "id": int(datetime.now().timestamp()),
-                "text": "Найдите силу тяжести для тела массой 2 кг",
+                "text": selected_question["text"],
                 "type": "multiple_choice",
-                "options": ["19.6 Н", "20 Н", "2 Н", "196 Н"],
-                "correct_answer": "19.6 Н",
-                "topic": "Механика",
-                "difficulty": "easy",
-                "explanation": "F = mg = 2 кг × 9.8 м/с² = 19.6 Н"
+                "options": selected_question["options"],
+                "correct_answer": selected_question["correct_answer"],
+                "topic": selected_question["topic"],
+                "difficulty": selected_question["difficulty"],
+                "explanation": selected_question["explanation"]
             }
         }
     except Exception as e:
