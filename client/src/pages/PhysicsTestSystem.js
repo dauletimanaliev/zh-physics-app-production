@@ -25,30 +25,16 @@ const PhysicsTestSystem = () => {
     try {
       console.log('📸 Для генерации вопроса необходимо загрузить фото');
       
-      // Create clean params object without circular references
-      const cleanParams = {
-        topic: selectedTopic || 'any',
-        difficulty: selectedDifficulty || 'any',
-        language: 'ru'
-      };
-      
-      const response = await apiClient.generateAIQuestion(cleanParams);
-      
-      if (response.question) {
-        setCurrentQuestion(response.question);
-        setQuestionCount(prev => prev + 1);
-      } else {
-        // Show message that photo is required
-        setCurrentQuestion({
-          text: response.message || "Для генерации вопросов по физике необходимо загрузить фото с задачей или диаграммой",
-          type: "photo_required",
-          options: ["Загрузить фото"],
-          correct_answer: "",
-          explanation: response.instruction || "Переключитесь на режим 'Фото → Виртуальная задача' и загрузите изображение",
-          topic: "Инструкция",
-          difficulty: "info"
-        });
-      }
+      // Show instruction message instead of trying to generate
+      setCurrentQuestion({
+        text: "Для генерации вопросов необходимо загрузить фото с задачей",
+        type: "photo_required",
+        options: ["Загрузить фото"],
+        correct_answer: "",
+        explanation: "Переключитесь на режим 'Фото → Виртуальная задача' и загрузите изображение",
+        topic: "Инструкция",
+        difficulty: "info"
+      });
       
     } catch (error) {
       console.error('❌ Error:', error);

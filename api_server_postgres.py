@@ -644,39 +644,26 @@ async def generate_physics_questions(image_content: bytes, filename: str) -> Lis
             image_base64 = base64.b64encode(image_content).decode('utf-8')
             
             # Create AI prompt for physics question generation
-            prompt = """Analyze this physics image thoroughly and generate exactly 10 different physics questions in Kazakh language that cover ALL possible aspects and variations of the problem shown.
+            prompt = """Analyze this physics image and extract the EXACT questions and answer options shown in the photo. Do NOT rewrite or change the questions - copy them exactly as they appear.
 
-            For each physics problem in the image, create questions that cover:
-            1. Direct calculation questions (using given values)
-            2. Conceptual understanding questions
-            3. Formula identification questions
-            4. Unit conversion questions
-            5. Alternative scenario questions (what if values were different)
-            6. Related physics principle questions
-            7. Problem-solving approach questions
-            8. Error analysis questions (common mistakes)
-            9. Real-world application questions
-            10. Advanced extension questions
-
-            Each question should be multiple choice with exactly 4 options.
-            
-            Return ONLY valid JSON array without any markdown formatting or extra text:
+            Return ONLY valid JSON array with the exact questions from the image:
             [
                 {
-                    "text": "Question text in Kazakh covering specific aspect of the problem",
-                    "options": ["Option A", "Option B", "Option C", "Option D"],
-                    "correct_answer": "Correct option text",
-                    "topic": "Physics topic in Kazakh",
-                    "difficulty": "easy/medium/hard",
-                    "explanation": "Detailed step-by-step explanation in Kazakh with formulas, calculations, and why this aspect is important"
+                    "text": "EXACT question text from image in original language",
+                    "options": ["EXACT option A from image", "EXACT option B from image", "EXACT option C from image", "EXACT option D from image"],
+                    "correct_answer": "The correct option text",
+                    "topic": "Physics topic",
+                    "difficulty": "medium",
+                    "explanation": "Detailed step-by-step solution explaining why the answer is correct, showing all calculations and formulas used"
                 }
             ]
             
             IMPORTANT: 
-            - Cover ALL aspects of the physics problem shown
-            - Include different difficulty levels
-            - Vary question types (calculation, conceptual, application)
-            - Return ONLY the JSON array, no markdown blocks, no extra text, no truncation"""
+            - Copy questions EXACTLY as shown in the image
+            - Include ALL questions/variants visible in the photo
+            - Do NOT rewrite or modify the original text
+            - Provide detailed explanations for each answer
+            - Return ONLY the JSON array, no markdown blocks"""
             
             # Call OpenAI Vision API
             response = client.chat.completions.create(
